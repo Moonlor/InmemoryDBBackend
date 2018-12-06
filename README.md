@@ -1,8 +1,5 @@
 # 介绍
 `watchdog-framework`基于SpringBoot+Shiro+Mybatis+Mybatis-Plus+HikariCP+Redis+Vue+iView等开发的轻量级管理系统快速开发脚手架，拥有角色、用户、资源管理、权限数据同步更新等功能，并此项目会进行持续更新升级，欢迎使用，若对您有帮助请点击上方的star :beers: 。
-# 在线演示
-
-[https://wdog-web.licoy.cn](https://wdog-web.licoy.cn)
 
 - 用户名：test
 - 密码：test123456
@@ -84,37 +81,4 @@ spring:
 - 启动
     
     运行`WatchDogApplication.java`，默认端口为1000
-    
- ## 客户端
-
-- [点击此处进入“watchdog-framework-web”项目部署说明](https://github.com/watchdog-framework/watchdog-framework-web)
-
-# 常见问题
-- [点此查看解决办法](QUESTION.md)
-
-# 讨论
-
- - QQ群：30261540  &nbsp; [点我加入QQ群讨论](https://shang.qq.com/wpa/qunwpa?idkey=c3541f1d0dbe443456228e3aebf23f6795b614a94d5df6a32f0b2b1c759bb99b)
-
-- 作者博客：[https://www.licoy.cn](https://www.licoy.cn)
-
-# 项目地址
-
-- Github：[https://github.com/watchdog-framework/watchdog-framework](https://github.com/watchdog-framework/watchdog-framework)
-
-- 码云：[https://gitee.com/licoy/watchdog-framework](https://gitee.com/licoy/watchdog-framework)
-
-# TODO
-
-- [ ] 支持容器化
-- [ ] 字典
-- [x] 日志记录
-- [ ] More...
-
-# 业务扩展
-
-个人接单，有需求的小伙伴可以直接联系我，业务类型请参考：[https://www.licoy.cn/business.html](https://www.licoy.cn/business.html)
-
-# 开源协议
-MIT
     
