@@ -4,12 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.licoy</groupId>
-    <artifactId>watchDog-framework</artifactId>
+    <artifactId>InmemoryDBBackend</artifactId>
     <version>0.1.2</version>
     <packaging>jar</packaging>
 
-    <name>watchDog-framework</name>
-    <description>watchDog-framework</description>
+    <name>InmemoryDBBackend</name>
+    <description>InmemoryDBBackend</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
