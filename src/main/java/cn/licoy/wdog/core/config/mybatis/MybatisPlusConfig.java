@@ -64,7 +64,7 @@ public class MybatisPlusConfig {
     @Bean
     public PaginationInterceptor paginationInterceptor() {
         PaginationInterceptor page = new PaginationInterceptor();
-        page.setDialectType("mysql");
+        page.setDialectType("oracle");
         return page;
     }
     /**
@@ -87,7 +87,7 @@ public class MybatisPlusConfig {
         }
         // MP 全局配置，更多内容进入类看注释
         GlobalConfiguration globalConfig = new GlobalConfiguration();
-        globalConfig.setDbType(DBType.MYSQL.name());//数据库类型
+        globalConfig.setDbType(DBType.ORACLE.name());//数据库类型
         // ID 策略 AUTO->`0`("数据库ID自增") INPUT->`1`(用户输入ID") ID_WORKER->`2`("全局唯一ID") UUID->`3`("全局唯一ID")
         //使用ID_WORKER_STR，因为前后端分离使用整形，前端JS会有精度丢失
         globalConfig.setIdType(IdType.ID_WORKER_STR.getKey());
