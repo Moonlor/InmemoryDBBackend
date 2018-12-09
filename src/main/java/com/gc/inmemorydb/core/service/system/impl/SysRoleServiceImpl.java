@@ -41,7 +41,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper,SysRole> imple
 
     @Override
     public List<SysRole> findAllRoleByUserId(String uid,Boolean hasResource) {
-        List<SysUserRole> userRoles = userRoleService.selectList(new EntityWrapper<SysUserRole>().eq("uid", uid));
+        List<SysUserRole> userRoles = userRoleService.selectList(new EntityWrapper<SysUserRole>().eq("uuuid", uid));
         List<SysRole> roles = new ArrayList<>();
         userRoles.forEach(v->{
             SysRole role = this.selectById(v.getRid());
@@ -134,7 +134,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper,SysRole> imple
     public void updateCache(SysRole role,Boolean author, Boolean out) {
         List<SysUserRole> sysUserRoles = userRoleService.selectList(new EntityWrapper<SysUserRole>()
                 .eq("rid", role.getId())
-                .groupBy("uid"));
+                .groupBy("uuuid"));
         List<String> userIdList = new ArrayList<>();
         if(sysUserRoles!=null && sysUserRoles.size()>0){
             sysUserRoles.forEach(v-> userIdList.add(v.getUuuid()));

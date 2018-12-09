@@ -279,7 +279,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper,SysUser> imple
     @Override
     public void updateUserRole(SysUser user) {
         try {
-            userRoleService.delete(new EntityWrapper<SysUserRole>().eq("uid",user.getId()));
+            userRoleService.delete(new EntityWrapper<SysUserRole>().eq("uuuid",user.getId()));
             if(user.getRoles()!=null && user.getRoles().size()>0){
                 user.getRoles().forEach(v-> userRoleService.insert(SysUserRole.builder()
                         .uuuid(user.getId())
