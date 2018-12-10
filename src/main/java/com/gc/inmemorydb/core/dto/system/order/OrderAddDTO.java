@@ -9,7 +9,6 @@ import lombok.Data;
  */
 @Data
 public class OrderAddDTO {
-
     private Integer flightId;
 
 }

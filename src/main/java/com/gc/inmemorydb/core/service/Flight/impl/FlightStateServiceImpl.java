@@ -33,16 +33,18 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
     @Override
     public Boolean modifyFlightState(ModifyFlightDTO modifyFlightDTO){
         Flight temp = new Flight();
-        temp.setFlightId(modifyFlightDTO.getId());
-        temp.setStatus(modifyFlightDTO.getState());
-        Boolean result = this.updateById(temp);
+//        temp.setFlightId(modifyFlightDTO.getFlightId());
+        temp.setStatus(modifyFlightDTO.getStatus());
+        EntityWrapper<Flight> wrapper = new EntityWrapper<>();
+        wrapper.eq("flight_id", modifyFlightDTO.getFlightId());
+        Boolean result = this.update(temp, wrapper);
         return result;
     }
 
     @Override
     public Boolean modifyFlightInfo(ModifyFlightDTO modifyFlightDTO){
         Flight temp = new Flight();
-        temp.setFlightId(modifyFlightDTO.getId());
+//        temp.setFlightId(modifyFlightDTO.getFlightId());
         temp.setDeptDate(modifyFlightDTO.getDeptDate());
         temp.setDeptTime(modifyFlightDTO.getDeptTime());
         temp.setArriveDate(modifyFlightDTO.getArriveDate());
@@ -50,7 +52,10 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
         temp.setPrice(modifyFlightDTO.getPrice());
         temp.setDeptAirportCode(modifyFlightDTO.getDeptAirportCode());
         temp.setArriveAirportCode(modifyFlightDTO.getArriveAirportCode());
-        Boolean result = this.updateById(temp);
+
+        EntityWrapper<Flight> wrapper = new EntityWrapper<>();
+        wrapper.eq("flight_id", modifyFlightDTO.getFlightId());
+        Boolean result = this.update(temp, wrapper);
         return result;
     }
 
