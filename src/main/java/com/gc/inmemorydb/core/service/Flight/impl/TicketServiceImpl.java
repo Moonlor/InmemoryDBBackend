@@ -37,11 +37,8 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
         catch(java.text.ParseException e) {
         }
         findTicketDTO.setDeptDate(sdf.toString());
-        String temp=sdf.format(date);
-        System.out.println(temp);
-
         Page<Flight> page = new Page<>(findTicketDTO.getPage(), findTicketDTO.getPageSize());
 
-        return page.setRecords(this.baseMapper.findCertainFlightSQL(page, temp));
+        return page.setRecords(this.baseMapper.findCertainFlightSQL(page, sdf.format(date), findTicketDTO.getDeptCity(), findTicketDTO.getArriveCity()));
     }
 }

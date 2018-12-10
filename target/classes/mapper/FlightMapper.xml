@@ -2,8 +2,16 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gc.inmemorydb.core.mapper.system.FlightMapper">
     <select id="findCertainFlightSQL" resultType="com.gc.inmemorydb.core.entity.system.Flight">
-        select * from FLIGHT
-        where
-        DEPT_DATE= to_date(#{deptDate} , 'yyyy-mm-dd hh24:mi:ss')
+        SELECT * FROM FLIGHT
+        WHERE
+            DEPT_DATE= TO_DATE(#{deptDate} , 'yyyy-mm-dd hh24:mi:ss')
+		    AND
+			DEPT_AIRPORT_CODE IN (
+			SELECT AIRPORT_CODE FROM AIRPORT
+			WHERE CITY_NAME = #{deptCity})
+			AND
+			ARRIVE_AIRPORT_CODE IN (
+			SELECT AIRPORT_CODE FROM AIRPORT
+			WHERE CITY_NAME = #{arriveCity})
     </select>
 </mapper>
