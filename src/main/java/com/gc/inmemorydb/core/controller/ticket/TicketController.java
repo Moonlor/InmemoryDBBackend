@@ -1,5 +1,6 @@
 package com.gc.inmemorydb.core.controller.ticket;
 
+import com.baomidou.mybatisplus.plugins.Page;
 import com.gc.inmemorydb.common.annotation.SysLogs;
 import com.gc.inmemorydb.common.bean.ResponseResult;
 import com.gc.inmemorydb.common.bean.ResponseCode;
@@ -31,7 +32,7 @@ public class TicketController {
     @SysLogs("获取特定航班信息")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult get(@RequestBody FindTicketDTO findTicketDTO) {
-        List<Flight> results = ticketService.findCertainFlight(findTicketDTO);
+        Page<Flight> results = ticketService.findCertainFlight(findTicketDTO);
         return ResponseResult.e(ResponseCode.OK, results);
     }
 }

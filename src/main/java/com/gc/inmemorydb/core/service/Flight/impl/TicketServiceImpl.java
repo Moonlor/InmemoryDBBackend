@@ -1,6 +1,7 @@
 package com.gc.inmemorydb.core.service.Flight.impl;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.gc.inmemorydb.core.dto.system.flight.FindTicketDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
@@ -23,7 +24,7 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
     private ShiroService shiroService;
 
     @Override
-    public List<Flight> findCertainFlight(FindTicketDTO findTicketDTO) {
+    public Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO) {
         EntityWrapper<Flight> wrapper = new EntityWrapper<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Date date = new Date();
@@ -33,7 +34,8 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
         catch(java.text.ParseException e) {
         }
         wrapper.eq("dept_date", date);
-        List<Flight> results = this.selectList(wrapper);
-        return results;
+        // List<Flight> results = this.selectList(wrapper);
+        Page<Flight> currentPage = this.selectPage(new Page<Flight>(findTicketDTO.getPage(), findTicketDTO.getPageSize()), wrapper);
+        return currentPage;
     }
 }
