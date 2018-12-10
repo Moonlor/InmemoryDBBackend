@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
 import io.swagger.annotations.ApiParam;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
+import com.gc.inmemorydb.common.util.Tools;
+import com.gc.inmemorydb.core.config.jwt.JwtToken;
+import org.springframework.beans.BeanUtils;
 
 @RestController
 @RequestMapping(value = "/order")
@@ -32,7 +37,7 @@ public class OrderController {
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult add(@RequestBody @Validated @ApiParam(value = "用户数据") OrderAddDTO addDTO){
 
-        System.out.print(addDTO);
+
         orderService.createOrder(addDTO);
         return ResponseResult.e(ResponseCode.OK);
     }
