@@ -1,7 +1,7 @@
 package com.gc.inmemorydb.core.mapper.system;
 
 import com.baomidou.mybatisplus.mapper.BaseMapper;
-import com.gc.inmemorydb.core.entity.system.Order;
+import com.gc.inmemorydb.core.entity.system.Ticketorder;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;
 
@@ -11,5 +11,5 @@ import org.springframework.stereotype.Repository;
  */
 @Mapper
 @Repository
-public interface OrderMapper extends BaseMapper<Order> {
+public interface OrderMapper extends BaseMapper<Ticketorder> {
 }
