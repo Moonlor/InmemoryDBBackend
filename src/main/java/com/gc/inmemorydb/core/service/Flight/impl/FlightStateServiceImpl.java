@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
+import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.mapper.system.FlightMapper;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
@@ -25,6 +26,16 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
         Page<Flight> currentPage = this.selectPage(new Page<Flight>(getFlightStateDTO.getPage(), getFlightStateDTO.getPageSize()));
 
         return currentPage;
+
+    }
+
+    @Override
+    public Boolean modifyFlightState(ModifyFlightDTO modifyFlightDTO){
+        Flight temp = new Flight();
+        temp.setFlightId(modifyFlightDTO.getId());
+        temp.setStatus(modifyFlightDTO.getState());
+        Boolean result = this.updateById(temp);
+        return result;
 
     }
 

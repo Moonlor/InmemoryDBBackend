@@ -1,6 +1,7 @@
 package com.gc.inmemorydb.core.service.Flight;
 
 import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
+import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.baomidou.mybatisplus.plugins.Page;
 
@@ -11,5 +12,7 @@ public interface FlightStateService {
      * @return
      **/
     Page<Flight> getFlightStatus(GetFlightStateDTO getFlightStateDTO);
+
+    Boolean modifyFlightState(ModifyFlightDTO modifyFlightDTO);
 
 }

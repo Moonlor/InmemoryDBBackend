@@ -5,6 +5,7 @@ import com.gc.inmemorydb.common.annotation.SysLogs;
 import com.gc.inmemorydb.common.bean.ResponseCode;
 import com.gc.inmemorydb.common.bean.ResponseResult;
 import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
+import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
 import io.swagger.annotations.Api;
@@ -32,6 +33,15 @@ public class FlightController {
     public ResponseResult list(@RequestBody GetFlightStateDTO getFlightStateDTO){
         Page<Flight> results = flightStateService.getFlightStatus(getFlightStateDTO);
         return ResponseResult.e(ResponseCode.OK, results);
+    }
+
+    @PostMapping(value = {"/modify"})
+    @ApiOperation(value = "修改航班状态")
+    @SysLogs("修改航班状态")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult modify(@RequestBody ModifyFlightDTO modifyFlightDTO){
+        Boolean result = flightStateService.modifyFlightState(modifyFlightDTO);
+        return ResponseResult.e(ResponseCode.OK, result);
     }
 
 
