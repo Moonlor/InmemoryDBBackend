@@ -14,7 +14,7 @@ public class MyBatisMapperScannerConfig {
     public MapperScannerConfigurer mapperScannerConfigurer(){
         MapperScannerConfigurer mapperScannerConfigurer = new MapperScannerConfigurer();
         mapperScannerConfigurer.setSqlSessionFactoryBeanName("sqlSessionFactory");
-        mapperScannerConfigurer.setBasePackage("cn.licoy.wdog.core.mapper");
+        mapperScannerConfigurer.setBasePackage("com.gc.inmemorydb.core.mapper");
         return mapperScannerConfigurer;
     }
 }
