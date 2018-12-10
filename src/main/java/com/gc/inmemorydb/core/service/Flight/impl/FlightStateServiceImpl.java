@@ -40,6 +40,21 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
     }
 
     @Override
+    public Boolean modifyFlightInfo(ModifyFlightDTO modifyFlightDTO){
+        Flight temp = new Flight();
+        temp.setFlightId(modifyFlightDTO.getId());
+        temp.setDeptDate(modifyFlightDTO.getDeptDate());
+        temp.setDeptTime(modifyFlightDTO.getDeptTime());
+        temp.setArriveDate(modifyFlightDTO.getArriveDate());
+        temp.setArriveTime(modifyFlightDTO.getArriveTime());
+        temp.setPrice(modifyFlightDTO.getPrice());
+        temp.setDeptAirportCode(modifyFlightDTO.getDeptAirportCode());
+        temp.setArriveAirportCode(modifyFlightDTO.getArriveAirportCode());
+        Boolean result = this.updateById(temp);
+        return result;
+    }
+
+    @Override
     public Boolean insertSingleFlight(InsertSingleFlightDTO insertSingleFlightDTO){
         Flight temp = new Flight();
         temp.setFlightCode(insertSingleFlightDTO.getFlightCode());
