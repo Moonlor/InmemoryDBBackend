@@ -1,8 +1,8 @@
 logging:
   level:
-    cn:
-      licoy:
-        wdog: debug
+    com:
+      gc:
+        inmemorydb: debug
 spring:
   datasource:
     url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
@@ -29,4 +29,4 @@ server:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
     min-response-size: 1024
-  port: 1000
+  port: 5005

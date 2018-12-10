@@ -17,7 +17,7 @@ import java.util.List;
  * @author licoy.cn
  * @version 2017/11/18
  */
-@ControllerAdvice(basePackages = {"cn.licoy.wdog"})
+@ControllerAdvice(basePackages = {"com.gc.inmemorydb"})
 @Log4j
 public class GlobalDefaultExceptionHandler {
 
