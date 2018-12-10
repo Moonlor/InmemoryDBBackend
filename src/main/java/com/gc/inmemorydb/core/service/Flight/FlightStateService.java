@@ -16,6 +16,8 @@ public interface FlightStateService {
 
     Boolean modifyFlightState(ModifyFlightDTO modifyFlightDTO);
 
+    Boolean modifyFlightInfo(ModifyFlightDTO modifyFlightDTO);
+
     Boolean insertSingleFlight(InsertSingleFlightDTO insertSingleFlightDTO);
 
 }

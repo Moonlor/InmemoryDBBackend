@@ -36,12 +36,21 @@ public class FlightController {
         return ResponseResult.e(ResponseCode.OK, results);
     }
 
-    @PostMapping(value = {"/modify"})
+    @PostMapping(value = {"/modify/state"})
     @ApiOperation(value = "修改航班状态")
     @SysLogs("修改航班状态")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult modify(@RequestBody ModifyFlightDTO modifyFlightDTO){
         Boolean result = flightStateService.modifyFlightState(modifyFlightDTO);
+        return ResponseResult.e(ResponseCode.OK, result);
+    }
+
+    @PostMapping(value = {"/modify/info"})
+    @ApiOperation(value = "修改航班信息")
+    @SysLogs("修改航班信息")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult modifyInfo(@RequestBody ModifyFlightDTO modifyFlightDTO){
+        Boolean result = flightStateService.modifyFlightInfo(modifyFlightDTO);
         return ResponseResult.e(ResponseCode.OK, result);
     }
 
