@@ -48,10 +48,10 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
         temp.setArriveTime(insertSingleFlightDTO.getArriveTime());
         temp.setArriveDate(insertSingleFlightDTO.getArriveDate());
         temp.setPrice(insertSingleFlightDTO.getPrice());
-        temp.setDeptAirpotCode(insertSingleFlightDTO.getDeptAirpotCode);
-        temp.setArriveAirpotCode(insertSingleFlightDTO.getArriveAirpotCode);
-        temp.setStatus(insertSingleFlightDTO.getStatus);
-        temp.setAirline(insertSingleFlightDTO.getAirline);
+        temp.setDeptAirportCode(insertSingleFlightDTO.getDeptAirportCode());
+        temp.setArriveAirportCode(insertSingleFlightDTO.getArriveAirportCode());
+        temp.setStatus(insertSingleFlightDTO.getState());
+        temp.setAirline(insertSingleFlightDTO.getAirline());
 
         Boolean result = this.insert(temp);
 

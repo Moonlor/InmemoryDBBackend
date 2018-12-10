@@ -3,7 +3,6 @@ package com.gc.inmemorydb.core.controller.airport;
 import com.gc.inmemorydb.common.annotation.SysLogs;
 import com.gc.inmemorydb.common.bean.ResponseCode;
 import com.gc.inmemorydb.common.bean.ResponseResult;
-import com.gc.inmemorydb.core.dto.system.airport.GetAllCityDTO;
 import com.gc.inmemorydb.core.entity.system.Airport;
 import com.gc.inmemorydb.core.service.Airport.CityService;
 import io.swagger.annotations.Api;

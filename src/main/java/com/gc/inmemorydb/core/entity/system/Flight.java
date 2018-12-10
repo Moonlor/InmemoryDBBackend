@@ -14,7 +14,6 @@ import java.util.Date;
 
 public class Flight implements Serializable {
 
-    @TableId
     private Integer flightId;
 
     private String flightCode;
