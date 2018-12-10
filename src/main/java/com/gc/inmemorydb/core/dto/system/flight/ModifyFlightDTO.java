@@ -22,7 +22,7 @@ public class ModifyFlightDTO extends SplitPageDTO {
 
     private Integer price;
 
-    private String status
+    private String status;
 
     private String arriveAirportCode;
 

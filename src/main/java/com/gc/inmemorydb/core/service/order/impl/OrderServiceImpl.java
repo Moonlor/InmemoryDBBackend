@@ -23,9 +23,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Ticketorder> impl
     @Override
     public void createOrder(OrderAddDTO orderAddDTO) {
 
-<<<<<<< HEAD
-        //Flight flight = this.selectOne(new EntityWrapper<Flight>().eq("flightId",orderAddDTO.getFlightId()));
-=======
         Ticketorder temp = new Ticketorder();
         temp.setUserId(2);
         temp.setFlightId(orderAddDTO.getFlightId());
@@ -33,7 +30,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Ticketorder> impl
 
 
         this.insert(temp);
->>>>>>> 74d63e2a28013ce7fcfffc4ecdb5acb73dcf72eb
 
     }
 }
