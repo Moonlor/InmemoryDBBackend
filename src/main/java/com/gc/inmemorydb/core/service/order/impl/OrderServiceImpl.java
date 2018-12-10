@@ -27,7 +27,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Override
     public void createOrder(OrderAddDTO orderAddDTO) {
 
-        Flight flight = this.selectOne(new EntityWrapper<Flight>().eq("flightId",orderAddDTO.getFlightId()));
+        //Flight flight = this.selectOne(new EntityWrapper<Flight>().eq("flightId",orderAddDTO.getFlightId()));
 
     }
 }

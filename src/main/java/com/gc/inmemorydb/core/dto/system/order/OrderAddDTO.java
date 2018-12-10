@@ -10,7 +10,6 @@ import lombok.Data;
  */
 @Data
 public class OrderAddDTO {
-    @NotBlank(message = "航班号不能为空")
     private Integer flightId;
 
 }
