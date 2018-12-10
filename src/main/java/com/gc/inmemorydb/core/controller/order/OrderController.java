@@ -9,7 +9,6 @@ import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.service.order.OrderService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +31,8 @@ public class OrderController {
     @SysLogs("添加新订单")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult add(@RequestBody @Validated @ApiParam(value = "用户数据") OrderAddDTO addDTO){
+
+        System.out.print(addDTO);
         orderService.createOrder(addDTO);
         return ResponseResult.e(ResponseCode.OK);
     }

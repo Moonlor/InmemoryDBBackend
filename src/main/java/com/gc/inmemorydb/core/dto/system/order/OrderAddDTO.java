@@ -1,6 +1,5 @@
 package com.gc.inmemorydb.core.dto.system.order;
 
-import org.hibernate.validator.constraints.NotBlank;
 import lombok.Data;
 
 
@@ -10,6 +9,10 @@ import lombok.Data;
  */
 @Data
 public class OrderAddDTO {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 74d63e2a28013ce7fcfffc4ecdb5acb73dcf72eb
     private Integer flightId;
 
 }

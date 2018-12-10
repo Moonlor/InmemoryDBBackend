@@ -10,7 +10,7 @@ import java.util.Date;
 public class ModifyFlightDTO extends SplitPageDTO {
 
     @NotBlank(message = "航班id不能为空")
-    private Integer id;
+    private Integer flightId;
 
     private Date deptDate;
 
@@ -22,7 +22,7 @@ public class ModifyFlightDTO extends SplitPageDTO {
 
     private Integer price;
 
-    private String state;
+    private String status
 
     private String arriveAirportCode;
 
