@@ -25,6 +25,7 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
 
     @Override
     public Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO) {
+        Flight f = new Flight();
         EntityWrapper<Flight> wrapper = new EntityWrapper<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Date date = new Date();
