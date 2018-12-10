@@ -1,8 +1,8 @@
 package com.gc.inmemorydb.core.service.order;
 
 import com.baomidou.mybatisplus.plugins.Page;
-import com.gc.inmemorydb.core.dto.system.flight.FindTicketDTO;
-import com.gc.inmemorydb.core.entity.system.Flight;
+import com.gc.inmemorydb.core.dto.system.order.OrderAddDTO;;
+import com.gc.inmemorydb.core.entity.system.Order;
 
 
 /**
@@ -12,8 +12,7 @@ import com.gc.inmemorydb.core.entity.system.Flight;
 public interface OrderService {
 
     /**
-     * 获取机票列表
-     * @return
+     * 创建订单
      * */
-    Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO);
+    public void createOrder(OrderAddDTO orderAddDTO);
 }
