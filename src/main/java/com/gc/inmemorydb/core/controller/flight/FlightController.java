@@ -5,6 +5,7 @@ import com.gc.inmemorydb.common.annotation.SysLogs;
 import com.gc.inmemorydb.common.bean.ResponseCode;
 import com.gc.inmemorydb.common.bean.ResponseResult;
 import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
+import com.gc.inmemorydb.core.dto.system.flight.InsertSingleFlightDTO;
 import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
@@ -41,6 +42,15 @@ public class FlightController {
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult modify(@RequestBody ModifyFlightDTO modifyFlightDTO){
         Boolean result = flightStateService.modifyFlightState(modifyFlightDTO);
+        return ResponseResult.e(ResponseCode.OK, result);
+    }
+
+    @PostMapping(value = {"/add/single"})
+    @ApiOperation(value = "添加航班信息")
+    @SysLogs("添加航班信息")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult add(@RequestBody InsertSingleFlightDTO insertSingleFlightDTO){
+        Boolean result = flightStateService.insertSingleFlight(insertSingleFlightDTO);
         return ResponseResult.e(ResponseCode.OK, result);
     }
 

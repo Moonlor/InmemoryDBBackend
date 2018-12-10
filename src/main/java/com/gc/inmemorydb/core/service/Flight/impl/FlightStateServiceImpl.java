@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
+import com.gc.inmemorydb.core.dto.system.flight.InsertSingleFlightDTO;
 import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.mapper.system.FlightMapper;
@@ -36,7 +37,25 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
         temp.setStatus(modifyFlightDTO.getState());
         Boolean result = this.updateById(temp);
         return result;
+    }
 
+    @Override
+    public Boolean insertSingleFlight(InsertSingleFlightDTO insertSingleFlightDTO){
+        Flight temp = new Flight();
+        temp.setFlightCode(insertSingleFlightDTO.getFlightCode());
+        temp.setDeptDate(insertSingleFlightDTO.getDeptDate());
+        temp.setDeptTime(insertSingleFlightDTO.getDeptTime());
+        temp.setArriveTime(insertSingleFlightDTO.getArriveTime());
+        temp.setArriveDate(insertSingleFlightDTO.getArriveDate());
+        temp.setPrice(insertSingleFlightDTO.getPrice());
+        temp.setDeptAirpotCode(insertSingleFlightDTO.getDeptAirpotCode);
+        temp.setArriveAirpotCode(insertSingleFlightDTO.getArriveAirpotCode);
+        temp.setStatus(insertSingleFlightDTO.getStatus);
+        temp.setAirline(insertSingleFlightDTO.getAirline);
+
+        Boolean result = this.insert(temp);
+
+        return result;
     }
 
 }
