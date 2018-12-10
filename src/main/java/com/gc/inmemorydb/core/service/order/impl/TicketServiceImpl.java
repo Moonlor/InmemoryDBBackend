@@ -34,6 +34,7 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
         catch(java.text.ParseException e) {
         }
         wrapper.eq("dept_date", date);
+        // List<Flight> results = this.selectList(wrapper);
         Page<Flight> currentPage = this.selectPage(new Page<Flight>(findTicketDTO.getPage(), findTicketDTO.getPageSize()), wrapper);
         return currentPage;
     }
