@@ -23,6 +23,6 @@ public interface FlightStateService {
 
     Flight searchFlightById(SearchFlightDTO searchFlightDTO);
 
-    Page<Map<String, Object>> reportAirlineFlightNumber(ReportDTO reportDTO);
+    List<Map<String, Object>> reportAirlineFlightNumber(ReportDTO reportDTO);
 
 }
