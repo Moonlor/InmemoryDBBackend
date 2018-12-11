@@ -4,10 +4,7 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.gc.inmemorydb.common.annotation.SysLogs;
 import com.gc.inmemorydb.common.bean.ResponseCode;
 import com.gc.inmemorydb.common.bean.ResponseResult;
-import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
-import com.gc.inmemorydb.core.dto.system.flight.InsertSingleFlightDTO;
-import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
-import com.gc.inmemorydb.core.dto.system.flight.SearchFlightDTO;
+import com.gc.inmemorydb.core.dto.system.flight.*;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
 import io.swagger.annotations.Api;
@@ -19,6 +16,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/flight")
@@ -73,6 +73,13 @@ public class FlightController {
         return ResponseResult.e(ResponseCode.OK, result);
     }
 
-
+    @PostMapping(value = {"/report"})
+    @ApiOperation(value = "报表")
+    @SysLogs("报表")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult report(@RequestBody ReportDTO reportDTO){
+        List<Map<String, Obje ct>> result = flightStateService.reportAirlineFlightNumber(reportDTO);
+        return ResponseResult.e(ResponseCode.OK, result);
+    }
 
 }
