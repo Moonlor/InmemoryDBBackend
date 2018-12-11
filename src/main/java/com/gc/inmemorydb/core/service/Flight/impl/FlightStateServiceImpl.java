@@ -91,8 +91,10 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
     }
 
     @Override
-    public List<Map<String, Object>> reportAirlineFlightNumber(ReportDTO reportDTO){
-        return this.baseMapper.reportAirlineFlightNumber();
+    public Page<Map<String, Object>> reportAirlineFlightNumber(ReportDTO reportDTO){
+        Page<Map<String, Object>> page = new Page<Map<String, Object>>(ReportDTO.getPage(), ReportDTO.getPageSize());
+        return page.setRecords(this.baseMapper.reportAirlineFlightNumber());
+        
     }
 
 }
