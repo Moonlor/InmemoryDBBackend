@@ -119,5 +119,6 @@
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot:1.5.12.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-autoconfigure:1.5.12.RELEASE" level="project" />
     <orderEntry type="library" name="ojdbc8" level="project" />
+    <orderEntry type="library" name="ttjdbc7" level="project" />
   </component>
 </module>
