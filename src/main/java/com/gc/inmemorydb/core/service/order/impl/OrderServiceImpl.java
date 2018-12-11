@@ -67,8 +67,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
 
         JwtToken jwtToken = getJWTToken();
         Page<OrderInfo> page = new Page<>();
-        page.setRecords(this.baseMapper.getOrderInfoList(page,Integer.getInteger(jwtToken.getUid())));
-
+        page.setRecords(this.baseMapper.getOrderInfoList(page,jwtToken.getUid()));
 
         return page;
 
