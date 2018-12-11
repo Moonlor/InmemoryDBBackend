@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -23,10 +24,11 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
     @Autowired
     private ShiroService shiroService;
 
+    @Resource
+    private FlightMapper flightMapper;
+
     @Override
     public Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO) {
-        Flight f = new Flight();
-        EntityWrapper<Flight> wrapper = new EntityWrapper<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Date date = new Date();
         try {
@@ -34,8 +36,9 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
         }
         catch(java.text.ParseException e) {
         }
-        wrapper.eq("dept_date", date);
-        Page<Flight> currentPage = this.selectPage(new Page<Flight>(findTicketDTO.getPage(), findTicketDTO.getPageSize()), wrapper);
-        return currentPage;
+        findTicketDTO.setDeptDate(sdf.toString());
+        Page<Flight> page = new Page<>(findTicketDTO.getPage(), findTicketDTO.getPageSize());
+
+        return page.setRecords(this.baseMapper.findCertainFlightSQL(page, sdf.format(date), findTicketDTO.getDeptCity(), findTicketDTO.getArriveCity()));
     }
 }

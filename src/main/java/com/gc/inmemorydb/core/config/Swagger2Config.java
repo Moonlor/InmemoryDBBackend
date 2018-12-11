@@ -22,7 +22,7 @@ public class Swagger2Config {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("cn.licoy.wdog.core"))
+                .apis(RequestHandlerSelectors.basePackage("com.gc.inmemorydb.core"))
                 .paths(PathSelectors.any())
                 .build();
     }

@@ -35,4 +35,12 @@ public class Flight implements Serializable {
     private String arriveAirportCode;
 
     private String deptAirportCode;
+
+    private String arriveAirport;
+
+    private String deptAirport;
+
+    private Integer ticketNum;
+
+    private Integer ticketNumLeft;
 }
