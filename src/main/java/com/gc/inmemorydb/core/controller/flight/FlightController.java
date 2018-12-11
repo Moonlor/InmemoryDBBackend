@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -77,7 +78,7 @@ public class FlightController {
     @SysLogs("报表")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult report(@RequestBody ReportDTO reportDTO){
-        Map<String, Object> result = flightStateService.reportAirlineFlightNumber(reportDTO);
+        List<Map<String, Object>> result = flightStateService.reportAirlineFlightNumber(reportDTO);
         return ResponseResult.e(ResponseCode.OK, result);
     }
 

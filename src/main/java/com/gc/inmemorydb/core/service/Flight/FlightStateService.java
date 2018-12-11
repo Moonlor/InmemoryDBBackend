@@ -4,6 +4,7 @@ import com.gc.inmemorydb.core.dto.system.flight.*;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.baomidou.mybatisplus.plugins.Page;
 
+import java.util.List;
 import java.util.Map;
 
 public interface FlightStateService {
@@ -22,6 +23,6 @@ public interface FlightStateService {
 
     Flight searchFlightById(SearchFlightDTO searchFlightDTO);
 
-    Map<String, Object> reportAirlineFlightNumber(ReportDTO reportDTO);
+    List<Map<String, Object>> reportAirlineFlightNumber(ReportDTO reportDTO);
 
 }
