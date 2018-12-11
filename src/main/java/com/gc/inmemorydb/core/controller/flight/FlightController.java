@@ -7,6 +7,7 @@ import com.gc.inmemorydb.common.bean.ResponseResult;
 import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
 import com.gc.inmemorydb.core.dto.system.flight.InsertSingleFlightDTO;
 import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
+import com.gc.inmemorydb.core.dto.system.flight.SearchFlightDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
 import io.swagger.annotations.Api;
@@ -62,6 +63,16 @@ public class FlightController {
         Boolean result = flightStateService.insertSingleFlight(insertSingleFlightDTO);
         return ResponseResult.e(ResponseCode.OK, result);
     }
+
+    @PostMapping(value = {"/searchById"})
+    @ApiOperation(value = "根据Id查找航班")
+    @SysLogs("根据Id查找航班")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult searchById(@RequestBody SearchFlightDTO searchFlightDTO){
+        Flight result = flightStateService.searchFlightById(searchFlightDTO);
+        return ResponseResult.e(ResponseCode.OK, result);
+    }
+
 
 
 }

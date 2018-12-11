@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.gc.inmemorydb.core.dto.system.flight.GetFlightStateDTO;
 import com.gc.inmemorydb.core.dto.system.flight.InsertSingleFlightDTO;
 import com.gc.inmemorydb.core.dto.system.flight.ModifyFlightDTO;
+import com.gc.inmemorydb.core.dto.system.flight.SearchFlightDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.mapper.system.FlightMapper;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
@@ -76,6 +77,17 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
         Boolean result = this.insert(temp);
 
         return result;
+    }
+
+    @Override
+    public Flight searchFlightById(SearchFlightDTO searchFlightDTO){
+//        Flight temp = new Flight();
+//        temp.setFlightId(searchFlightDTO.getFlightId());
+        EntityWrapper<Flight> wrapper = new EntityWrapper<>();
+        wrapper.eq("flight_id", searchFlightDTO.getFlightId());
+        Flight result =  this.selectOne(wrapper);
+        return result;
+
     }
 
 }
