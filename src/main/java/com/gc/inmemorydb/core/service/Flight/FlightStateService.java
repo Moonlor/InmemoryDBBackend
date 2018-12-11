@@ -26,6 +26,6 @@ public interface FlightStateService {
 
     List<Map<String, Object>> reportAirlineFlightNumber(ReportDTO reportDTO);
 
-    Map<String, Report> reportAirlineCityNumber(ReportDTO reportDTO);
+    List<Report> reportAirlineCityNumber(ReportDTO reportDTO);
 
 }

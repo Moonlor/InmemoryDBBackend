@@ -99,7 +99,7 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
     }
 
     @Override
-    public Map<String, Report> reportAirlineCityNumber(ReportDTO reportDTO){
+    public List<Report> reportAirlineCityNumber(ReportDTO reportDTO){
         return this.baseMapper.reportAirlineCityNumber();
     }
 

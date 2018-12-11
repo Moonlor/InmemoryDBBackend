@@ -19,4 +19,10 @@
 		SELECT AIRLINE, COUNT(FLIGHT_ID) FLIGHT_NUM FROM FLIGHT
 		GROUP BY AIRLINE
 	</select>
+
+	<select id="reportAirlineCityNumber" resultType="com.gc.inmemorydb.core.entity.system.Report">
+		SELECT CITY_NAME , AIRLINE , COUNT(*)  fnumber FROM FLIGHT, AIRPORT
+		WHERE DEPT_AIRPORT_CODE = AIRPORT_CODE
+		GROUP BY  CITY_NAME,AIRLINE
+	</select>
 </mapper>
