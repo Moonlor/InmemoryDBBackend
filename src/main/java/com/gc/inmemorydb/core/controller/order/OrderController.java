@@ -48,11 +48,11 @@ public class OrderController {
     @ApiOperation(value = "获取所有的订单列表")
     @SysLogs("获取所有的订单列表")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
-
     public ResponseResult list(@RequestBody GetOrderDTO getOrderDTO){
+        System.out.print("??????");
         Page<OrderInfo> results = orderService.getOrderInfo(getOrderDTO);
         System.out.print(results);
-        return ResponseResult.e(ResponseCode.OK);
+        return ResponseResult.e(ResponseCode.OK,results);
     }
 
 }
