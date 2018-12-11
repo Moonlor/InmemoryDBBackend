@@ -4,11 +4,19 @@ logging:
       gc:
         inmemorydb: debug
 spring:
+#  datasource:
+#    url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
+#    username: memory
+#    password: memory
+#    driver-class-name: oracle.jdbc.driver.OracleDriver
+#    hikari:
+#      max-lifetime: 1765000
+#      maximum-pool-size: 15
   datasource:
-    url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
+    url: jdbc:timesten:direct:dsn=memory_tt;uid=memory;pwd=memory
     username: memory
     password: memory
-    driver-class-name: oracle.jdbc.driver.OracleDriver
+    driver-class-name: com.timesten.jdbc.TimesTenDriver
     hikari:
       max-lifetime: 1765000
       maximum-pool-size: 15
@@ -29,4 +37,4 @@ server:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
     min-response-size: 1024
-  port: 8844
+  port: 1000

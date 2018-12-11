@@ -3,6 +3,7 @@ package com.gc.inmemorydb.core.service.Flight;
 import com.gc.inmemorydb.core.dto.system.flight.*;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.baomidou.mybatisplus.plugins.Page;
+import com.gc.inmemorydb.core.entity.system.Report;
 
 import java.util.List;
 import java.util.Map;
@@ -24,5 +25,7 @@ public interface FlightStateService {
     Flight searchFlightById(SearchFlightDTO searchFlightDTO);
 
     List<Map<String, Object>> reportAirlineFlightNumber(ReportDTO reportDTO);
+
+    List<Report> reportAirlineCityNumber(ReportDTO reportDTO);
 
 }

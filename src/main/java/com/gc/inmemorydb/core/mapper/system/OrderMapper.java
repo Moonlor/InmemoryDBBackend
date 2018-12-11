@@ -16,5 +16,5 @@ import java.util.List;
 @Mapper
 @Repository
 public interface OrderMapper extends BaseMapper<Ticketorder> {
-    List<OrderInfo> getOrderInfoList(Pagination page, @Param("uId") Integer uId);
+    List<OrderInfo> getOrderInfoList(Pagination page, @Param("uId") String uId);
 }

@@ -13,7 +13,7 @@ spring:
 #      max-lifetime: 1765000
 #      maximum-pool-size: 15
   datasource:
-    url: jdbc:timesten:direct:DSN=memory_tt;uid=memory;pwd=memory;
+    url: jdbc:timesten:direct:dsn=memory_tt;uid=memory;pwd=memory
     username: memory
     password: memory
     driver-class-name: com.timesten.jdbc.TimesTenDriver
@@ -37,4 +37,8 @@ server:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
     min-response-size: 1024
+<<<<<<< HEAD
   port: 5005
+=======
+  port: 1000
+>>>>>>> master

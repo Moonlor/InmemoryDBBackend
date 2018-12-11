@@ -6,6 +6,7 @@ import com.gc.inmemorydb.common.bean.ResponseCode;
 import com.gc.inmemorydb.common.bean.ResponseResult;
 import com.gc.inmemorydb.core.dto.system.flight.*;
 import com.gc.inmemorydb.core.entity.system.Flight;
+import com.gc.inmemorydb.core.entity.system.Report;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -73,12 +74,21 @@ public class FlightController {
         return ResponseResult.e(ResponseCode.OK, result);
     }
 
-    @PostMapping(value = {"/report"})
+    @PostMapping(value = {"/report/company"})
     @ApiOperation(value = "报表")
     @SysLogs("报表")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
-    public ResponseResult report(@RequestBody ReportDTO reportDTO){
+    public ResponseResult reportCompany(@RequestBody ReportDTO reportDTO){
         List<Map<String, Object>> result = flightStateService.reportAirlineFlightNumber(reportDTO);
+        return ResponseResult.e(ResponseCode.OK, result);
+    }
+
+    @PostMapping(value = {"/report/companyCity"})
+    @ApiOperation(value = "航空公司城市报表")
+    @SysLogs("航空公司城市报表")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult reportCompanyCity(@RequestBody ReportDTO reportDTO){
+        List<Report> result = flightStateService.reportAirlineCityNumber(reportDTO);
         return ResponseResult.e(ResponseCode.OK, result);
     }
 
