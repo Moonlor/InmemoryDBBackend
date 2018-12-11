@@ -1,5 +1,6 @@
 package com.gc.inmemorydb.core.service.Flight.impl;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
@@ -28,6 +29,7 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
     private FlightMapper flightMapper;
 
     @Override
+    @DS("tt")
     public Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Date date = new Date();
