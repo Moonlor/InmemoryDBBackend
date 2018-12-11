@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author ZWZ
@@ -19,4 +20,5 @@ import java.util.List;
 @Repository
 public interface FlightMapper extends BaseMapper<Flight> {
     List<Flight> findCertainFlightSQL(Pagination page, @Param("deptDate") String deptDate, @Param("deptCity") String deptCity, @Param("arriveCity") String arriveCity);
+    Map<String, Object> reportAirlineFlightNumber();
 }
