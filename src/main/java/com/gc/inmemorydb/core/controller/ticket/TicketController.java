@@ -33,6 +33,7 @@ public class TicketController {
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult get(@RequestBody FindTicketDTO findTicketDTO) {
         Page<Flight> results = ticketService.findCertainFlight(findTicketDTO);
+        System.out.println(results);
         return ResponseResult.e(ResponseCode.OK, results);
     }
 }

@@ -9,6 +9,7 @@ import lombok.Data;
  * @version 2018/12/11
  */
 @Data
-public class GetOrderDTO extends SplitPageDTO {
+public class GetOrderDTO{
 
+    private Integer uId;
 }

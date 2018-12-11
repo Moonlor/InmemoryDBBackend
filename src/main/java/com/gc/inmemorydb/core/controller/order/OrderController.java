@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.gc.inmemorydb.common.annotation.SysLogs;
 import com.gc.inmemorydb.common.bean.ResponseCode;
 import com.gc.inmemorydb.common.bean.ResponseResult;
+import com.gc.inmemorydb.core.dto.system.order.GetOrderDTO;
 import com.gc.inmemorydb.core.dto.system.order.OrderAddDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
+import com.gc.inmemorydb.core.entity.system.OrderInfo;
 import com.gc.inmemorydb.core.service.order.OrderService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -46,7 +48,10 @@ public class OrderController {
     @ApiOperation(value = "获取所有的订单列表")
     @SysLogs("获取所有的订单列表")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
-    public ResponseResult list(){
+
+    public ResponseResult list(@RequestBody GetOrderDTO getOrderDTO){
+        Page<OrderInfo> results = orderService.getOrderInfo(getOrderDTO);
+        System.out.print(results);
         return ResponseResult.e(ResponseCode.OK);
     }
 

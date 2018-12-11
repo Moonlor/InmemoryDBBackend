@@ -4,6 +4,10 @@ import com.baomidou.mybatisplus.mapper.BaseMapper;
 import com.gc.inmemorydb.core.entity.system.Ticketorder;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;
+import com.gc.inmemorydb.core.entity.system.OrderInfo;
+import org.apache.ibatis.annotations.Param;
+import com.baomidou.mybatisplus.plugins.pagination.Pagination;
+import java.util.List;
 
 /**
  * @author STY
@@ -12,4 +16,5 @@ import org.springframework.stereotype.Repository;
 @Mapper
 @Repository
 public interface OrderMapper extends BaseMapper<Ticketorder> {
+    List<OrderInfo> getOrderInfoList(Pagination page, @Param("uId") Integer uId);
 }
