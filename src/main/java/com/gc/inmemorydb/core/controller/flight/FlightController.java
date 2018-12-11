@@ -79,7 +79,7 @@ public class FlightController {
     @SysLogs("报表")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult reportCompany(@RequestBody ReportDTO reportDTO){
-        List<Map<String, Obje ct>> result = flightStateService.reportAirlineFlightNumber(reportDTO);
+        List<Map<String, Object>> result = flightStateService.reportAirlineFlightNumber(reportDTO);
         return ResponseResult.e(ResponseCode.OK, result);
     }
 
