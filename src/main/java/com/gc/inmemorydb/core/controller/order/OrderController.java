@@ -42,6 +42,14 @@ public class OrderController {
         return ResponseResult.e(ResponseCode.OK);
     }
 
+    @PostMapping(value = {"/list"})
+    @ApiOperation(value = "获取所有的订单列表")
+    @SysLogs("获取所有的订单列表")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult list(){
+        return ResponseResult.e(ResponseCode.OK);
+    }
+
 }
 
 

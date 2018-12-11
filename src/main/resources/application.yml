@@ -12,7 +12,7 @@ spring:
     hikari:
       max-lifetime: 1765000
       maximum-pool-size: 15
-  redis:
+  redis:œ
     host: localhost
     port: 6379
     password: 123456
@@ -29,4 +29,4 @@ server:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
     min-response-size: 1024
-  port: 1000
+  port: 8844
