@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.gc.inmemorydb.core.dto.system.flight.*;
 import com.gc.inmemorydb.core.entity.system.Flight;
+import com.gc.inmemorydb.core.entity.system.Report;
 import com.gc.inmemorydb.core.mapper.system.FlightMapper;
 import com.gc.inmemorydb.core.service.Flight.FlightStateService;
 import com.gc.inmemorydb.core.service.global.ShiroService;
@@ -95,6 +96,11 @@ public class FlightStateServiceImpl extends ServiceImpl<FlightMapper, Flight> im
 
         return this.baseMapper.reportAirlineFlightNumber();
         
+    }
+
+    @Override
+    public Map<String, Report> reportAirlineCityNumber(ReportDTO reportDTO){
+        return this.baseMapper.reportAirlineCityNumber();
     }
 
 }
