@@ -17,6 +17,7 @@ import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -39,8 +40,12 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
         catch(java.text.ParseException e) {
         }
         findTicketDTO.setDeptDate(sdf.toString());
+        String costTime = UUID.randomUUID().toString();
         Page<Flight> page = new Page<>(findTicketDTO.getPage(), findTicketDTO.getPageSize());
-
-        return page.setRecords(this.baseMapper.findCertainFlightSQL(page, sdf.format(date), findTicketDTO.getDeptCity(), findTicketDTO.getArriveCity()));
+        List<Flight> o = this.baseMapper.findCertainFlightSQL(page,
+                sdf.format(date),
+                findTicketDTO.getDeptCity(),
+                findTicketDTO.getArriveCity());
+        return page.setRecords(o);
     }
 }
