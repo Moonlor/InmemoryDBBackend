@@ -20,5 +20,9 @@ public class OrderInfo implements Serializable {
 
     private Date deptDate;
 
+    private String arriveTime;
+
+    private String deptTime;
+
     private Integer price;
 }

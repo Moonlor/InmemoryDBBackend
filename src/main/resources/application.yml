@@ -5,27 +5,6 @@ logging:
         inmemorydb: debug
 spring:
 # ========================= 测试环境使用以下配置，master 和 tt 均配置为oracle
-  datasource:
-    dynamic:
-      primary: master #设置默认的数据源或者数据源组,默认值即为master
-      datasource:
-        master:
-          url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
-          username: memory
-          password: memory
-          driver-class-name: oracle.jdbc.driver.OracleDriver
-          hikari:
-            max-lifetime: 1765000
-            maximum-pool-size: 15
-        tt:
-          url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
-          username: memory
-          password: memory
-          driver-class-name: oracle.jdbc.driver.OracleDriver
-          hikari:
-            max-lifetime: 1765000
-            maximum-pool-size: 15
-# ========================= 安装有 tt client 的环境使用以下配置，master 配置为oracle，tt 配置为 tt
 #  datasource:
 #    dynamic:
 #      primary: master #设置默认的数据源或者数据源组,默认值即为master
@@ -39,13 +18,34 @@ spring:
 #            max-lifetime: 1765000
 #            maximum-pool-size: 15
 #        tt:
-#          url: jdbc:timesten:direct:dsn=memory_tt;uid=memory;pwd=memory
+#          url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
 #          username: memory
 #          password: memory
-#          driver-class-name: com.timesten.jdbc.TimesTenDriver
+#          driver-class-name: oracle.jdbc.driver.OracleDriver
 #          hikari:
 #            max-lifetime: 1765000
 #            maximum-pool-size: 15
+# ========================= 安装有 tt client 的环境使用以下配置，master 配置为oracle，tt 配置为 tt
+  datasource:
+    dynamic:
+      primary: master #设置默认的数据源或者数据源组,默认值即为master
+      datasource:
+        master:
+          url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
+          username: memory
+          password: memory
+          driver-class-name: oracle.jdbc.driver.OracleDriver
+          hikari:
+            max-lifetime: 1765000
+            maximum-pool-size: 15
+        tt:
+          url: jdbc:timesten:direct:dsn=memory_tt;uid=memory;pwd=memory
+          username: memory
+          password: memory
+          driver-class-name: com.timesten.jdbc.TimesTenDriver
+          hikari:
+            max-lifetime: 1765000
+            maximum-pool-size: 15
   redis:
     host: localhost
     port: 6379
