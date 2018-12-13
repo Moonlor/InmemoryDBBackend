@@ -1,6 +1,7 @@
 package com.gc.inmemorydb.core.controller.ticket;
 
 import com.baomidou.mybatisplus.plugins.Page;
+import com.gc.inmemorydb.StaticCache;
 import com.gc.inmemorydb.common.annotation.SysLogs;
 import com.gc.inmemorydb.common.bean.ResponseResult;
 import com.gc.inmemorydb.common.bean.ResponseCode;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author ZWZ
@@ -32,7 +34,8 @@ public class TicketController {
     @SysLogs("获取特定航班信息")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult get(@RequestBody FindTicketDTO findTicketDTO) {
-        Page<Flight> results = ticketService.findCertainFlight(findTicketDTO);
-        return ResponseResult.e(ResponseCode.OK, results);
+        String sqlUid = UUID.randomUUID().toString();
+        Page<Flight> results = ticketService.findCertainFlight(findTicketDTO, sqlUid);
+        return ResponseResult.e(ResponseCode.OK, results, StaticCache.getSqlCostUid(sqlUid));
     }
 }

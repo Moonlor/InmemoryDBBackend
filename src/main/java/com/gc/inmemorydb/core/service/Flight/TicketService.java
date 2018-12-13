@@ -18,5 +18,5 @@ public interface TicketService {
      * 获取机票列表
      * @return
      * */
-    Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO);
+    Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO, String sqlUid);
 }

@@ -33,6 +33,9 @@ public class ResponseResult<T> implements Serializable {
     @ApiModelProperty(value = "响应时间戳")
     private final long timestamps = System.currentTimeMillis();
 
+    @ApiModelProperty(value = "SQL执行耗时")
+    private String sqlCost;
+
     public synchronized static <T> ResponseResult<T> e(ResponseCode statusEnum) {
         return e(statusEnum,null);
     }
@@ -42,6 +45,15 @@ public class ResponseResult<T> implements Serializable {
         res.setStatus(statusEnum.code);
         res.setMsg(statusEnum.msg);
         res.setData(data);
+        return res;
+    }
+
+    public synchronized static <T> ResponseResult<T> e(ResponseCode statusEnum, T data, String sqlCost) {
+        ResponseResult<T> res = new ResponseResult<>();
+        res.setStatus(statusEnum.code);
+        res.setMsg(statusEnum.msg);
+        res.setData(data);
+        res.setSqlCost(sqlCost);
         return res;
     }
 

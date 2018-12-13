@@ -24,7 +24,8 @@ public interface FlightMapper extends BaseMapper<Flight> {
     List<Flight> findCertainFlightSQL(Pagination page,
                                       @Param("deptDate") String deptDate,
                                       @Param("deptCity") String deptCity,
-                                      @Param("arriveCity") String arriveCity);
+                                      @Param("arriveCity") String arriveCity,
+                                      @Param("sqlUid") String sqlUid);
     List<Map<String, Object>> reportAirlineFlightNumber();
 
 

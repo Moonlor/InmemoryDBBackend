@@ -1,9 +1,9 @@
 package com.gc.inmemorydb.core.service.Flight.impl;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.gc.inmemorydb.StaticCache;
 import com.gc.inmemorydb.core.dto.system.flight.FindTicketDTO;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.mapper.system.FlightMapper;
@@ -31,7 +31,7 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
 
     @Override
     @DS("tt")
-    public Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO) {
+    public Page<Flight> findCertainFlight(FindTicketDTO findTicketDTO, String sqlUid) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Date date = new Date();
         try {
@@ -40,12 +40,13 @@ public class TicketServiceImpl extends ServiceImpl<FlightMapper, Flight> impleme
         catch(java.text.ParseException e) {
         }
         findTicketDTO.setDeptDate(sdf.toString());
-        String costTime = UUID.randomUUID().toString();
         Page<Flight> page = new Page<>(findTicketDTO.getPage(), findTicketDTO.getPageSize());
         List<Flight> o = this.baseMapper.findCertainFlightSQL(page,
                 sdf.format(date),
                 findTicketDTO.getDeptCity(),
-                findTicketDTO.getArriveCity());
+                findTicketDTO.getArriveCity(),
+                sqlUid
+        );
         return page.setRecords(o);
     }
 }

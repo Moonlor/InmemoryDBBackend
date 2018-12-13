@@ -13,6 +13,8 @@
 			ARRIVE_AIRPORT_CODE IN (
 			SELECT AIRPORT_CODE FROM AIRPORT
 			WHERE CITY_NAME = #{arriveCity})
+			AND
+			#{sqlUid} = #{sqlUid}
     </select>
 
 	<select id="reportAirlineFlightNumber" resultType="map">
