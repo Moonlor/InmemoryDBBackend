@@ -9,4 +9,8 @@
     	WHERE USER_ID = #{uId})
  	  NATURAL JOIN FLIGHT
     </select>
+
+	<delete id="deleteOrder">
+	DELETE FROM ticketorder WHERE order_id = #{orderId,jdbcType=NUMERIC}
+    </delete>
 </mapper>

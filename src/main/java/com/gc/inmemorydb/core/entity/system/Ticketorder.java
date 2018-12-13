@@ -1,4 +1,5 @@
 package com.gc.inmemorydb.core.entity.system;
+import com.baomidou.mybatisplus.annotations.TableField;
 import com.baomidou.mybatisplus.annotations.TableId;
 import lombok.Data;
 import java.io.Serializable;
@@ -6,6 +7,7 @@ import java.io.Serializable;
 
 @Data
 public class Ticketorder implements Serializable {
+
 
     @TableId
     private Integer orderId;

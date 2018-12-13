@@ -53,12 +53,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
         Subject subject = SecurityUtils.getSubject();
 
         if(!subject.isAuthenticated()){
-            System.out.print("劉嘉澍牛逼！");
+            System.out.print("Error！");
         }
         JwtToken jwtToken = new JwtToken();
         Object principal = subject.getPrincipal();
         if(principal==null){
-            System.out.print("劉嘉澍牛逼！");
+            System.out.print("Error！");
         }
         BeanUtils.copyProperties(principal,jwtToken);
 
@@ -79,11 +79,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
     @Override
     public void remove(String orderId) {
         Integer id = Integer.getInteger(orderId);
-//        Ticketorder order = this.selectOne(new EntityWrapper<Ticketorder>()
-//                .eq("order_Id",orderId ).setSqlSelect("*"));
-//        if(order == null)
-//            throw RequestException.fail("删除失败，不存在ID为"+id+"的订单");
-        this.deleteById(id);
+        this.baseMapper.deleteOrder(id);
+//        this.deleteById(id);
         shiroService.reloadPerms();
     }
 }
