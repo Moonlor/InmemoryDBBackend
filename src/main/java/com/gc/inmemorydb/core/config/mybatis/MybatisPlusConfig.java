@@ -68,6 +68,14 @@ public class MybatisPlusConfig {
         return page;
     }
     /**
+     * 获取sql执行时间插件
+     */
+    @Bean
+    public SqlCostInterceptor sqlCostInterceptor() {
+        SqlCostInterceptor cost = new SqlCostInterceptor();
+        return cost;
+    }
+    /**
      * 这里全部使用mybatis-autoconfigure 已经自动加载的资源。不手动指定
      * 配置文件和mybatis-boot的配置文件同步
      */
@@ -112,6 +120,10 @@ public class MybatisPlusConfig {
         if (!ObjectUtils.isEmpty(this.properties.resolveMapperLocations())) {
             mybatisPlus.setMapperLocations(this.properties.resolveMapperLocations());
         }
+
+//        mybatisPlus.setPlugins(new Interceptor[]{new SqlCostInterceptor()});
+
+
         return mybatisPlus;
     }
 }

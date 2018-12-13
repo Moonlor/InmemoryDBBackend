@@ -9,7 +9,7 @@ public class Report implements Serializable {
 
     private Integer fnumber;
 
-    private String company;
+    private String airline;
 
-    private String city;
+    private String cityName;
 }

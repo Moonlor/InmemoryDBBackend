@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gc.inmemorydb.core.mapper.system.OrderMapper">
     <select id="getOrderInfoList" resultType="com.gc.inmemorydb.core.entity.system.OrderInfo">
-	SELECT ORDER_ID,FLIGHT_ID,ARRIVE_AIRPORT,DEPT_AIRPORT,ARRIVE_DATE,DEPT_DATE,PRICE
+	SELECT ORDER_ID,FLIGHT_ID,ARRIVE_AIRPORT,DEPT_AIRPORT,ARRIVE_DATE,DEPT_DATE,ARRIVE_TIME,DEPT_TIME,PRICE
 	FROM
   	  ( SELECT ORDER_ID,FLIGHT_ID
     	FROM ticketorder
