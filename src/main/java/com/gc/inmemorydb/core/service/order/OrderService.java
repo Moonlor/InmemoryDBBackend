@@ -31,4 +31,10 @@ public interface OrderService {
      * 获取JWTToken
      * */
     public JwtToken getJWTToken();
+
+    /**
+     * 删除订单
+     * @param orderId
+     */
+    void remove(String orderId);
 }

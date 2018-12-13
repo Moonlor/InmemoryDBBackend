@@ -1,9 +1,12 @@
 package com.gc.inmemorydb.core.service.order.impl;
 
 
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.gc.inmemorydb.common.exception.RequestException;
 import com.gc.inmemorydb.core.dto.system.order.OrderAddDTO;
 import com.gc.inmemorydb.core.dto.system.order.GetOrderDTO;
+
 import com.gc.inmemorydb.core.entity.system.Ticketorder;
 import com.gc.inmemorydb.core.entity.system.OrderInfo;
 
@@ -50,12 +53,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
         Subject subject = SecurityUtils.getSubject();
 
         if(!subject.isAuthenticated()){
-            System.out.print("劉嘉澍牛逼！");
+            System.out.print("Error！");
         }
         JwtToken jwtToken = new JwtToken();
         Object principal = subject.getPrincipal();
         if(principal==null){
-            System.out.print("劉嘉澍牛逼！");
+            System.out.print("Error！");
         }
         BeanUtils.copyProperties(principal,jwtToken);
 
@@ -71,5 +74,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
 
         return page;
 
+    }
+
+    @Override
+    public void remove(String orderId) {
+        Integer id = Integer.getInteger(orderId);
+        this.baseMapper.deleteOrder(id);
+//        this.deleteById(id);
+        shiroService.reloadPerms();
     }
 }
