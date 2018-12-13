@@ -13,10 +13,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
 import io.swagger.annotations.ApiParam;
 import org.apache.shiro.SecurityUtils;
@@ -49,11 +46,21 @@ public class OrderController {
     @SysLogs("获取所有的订单列表")
     @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
     public ResponseResult list(@RequestBody GetOrderDTO getOrderDTO){
-        System.out.print("??????");
         Page<OrderInfo> results = orderService.getOrderInfo(getOrderDTO);
-        System.out.print(results);
         return ResponseResult.e(ResponseCode.OK,results);
     }
+
+    @PostMapping(value = {"/remove/{orderId}"})
+    @ApiOperation(value = "删除订单")
+    @SysLogs("删除订单")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult remove(@PathVariable("orderId") @ApiParam("订单ID") String orderId){
+        System.out.println(orderId);
+        orderService.remove(orderId);
+        return ResponseResult.e(ResponseCode.OK);
+    }
+
+
 
 }
 

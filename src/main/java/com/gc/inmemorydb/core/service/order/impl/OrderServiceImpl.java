@@ -1,9 +1,12 @@
 package com.gc.inmemorydb.core.service.order.impl;
 
 
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.gc.inmemorydb.common.exception.RequestException;
 import com.gc.inmemorydb.core.dto.system.order.OrderAddDTO;
 import com.gc.inmemorydb.core.dto.system.order.GetOrderDTO;
+
 import com.gc.inmemorydb.core.entity.system.Ticketorder;
 import com.gc.inmemorydb.core.entity.system.OrderInfo;
 
@@ -71,5 +74,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
 
         return page;
 
+    }
+
+    @Override
+    public void remove(String orderId) {
+        Integer id = Integer.getInteger(orderId);
+//        Ticketorder order = this.selectOne(new EntityWrapper<Ticketorder>()
+//                .eq("order_Id",orderId ).setSqlSelect("*"));
+//        if(order == null)
+//            throw RequestException.fail("删除失败，不存在ID为"+id+"的订单");
+        this.deleteById(id);
+        shiroService.reloadPerms();
     }
 }
