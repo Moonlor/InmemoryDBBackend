@@ -78,6 +78,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
 
     @Override
     public void remove(String orderId) {
+        JwtToken jwtToken = getJWTToken();
         Integer id = Integer.getInteger(orderId);
         this.baseMapper.deleteOrder(id);
 //        this.deleteById(id);

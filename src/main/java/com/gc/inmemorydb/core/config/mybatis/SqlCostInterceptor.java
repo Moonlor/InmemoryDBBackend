@@ -1,7 +1,6 @@
 package com.gc.inmemorydb.core.config.mybatis;
 
 
-import com.apple.eawt.AppEvent;
 import com.gc.inmemorydb.StaticCache;
 import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.executor.statement.StatementHandler;
