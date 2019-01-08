@@ -49,17 +49,18 @@ public class SqlCostInterceptor implements Interceptor{
         long startTime = System.currentTimeMillis();
         try {
 
+            Object result = null;
+
             BoundSql boundSql = statementHandler.getBoundSql();
             Object parameterObject = boundSql.getParameterObject();
-            System.out.println(parameterObject.toString());
             Pattern pattern = Pattern.compile("(?<=sqlUid=)(\\S*)(?=,)");
-            Matcher matcher = pattern.matcher(parameterObject.toString());
-            if(matcher.find()){
-                uid = matcher.group(0);
+            if(parameterObject != null){
+                Matcher matcher = pattern.matcher(parameterObject.toString());
+                if(matcher.find()){
+                    uid = matcher.group(0);
+                }
             }
-
-
-            Object result = invocation.proceed();
+            result = invocation.proceed();
             return result;
         } finally {
             long endTime = System.currentTimeMillis();
