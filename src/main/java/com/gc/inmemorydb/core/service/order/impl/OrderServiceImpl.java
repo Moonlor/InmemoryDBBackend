@@ -69,7 +69,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
     public Page<OrderInfo> getOrderInfo(GetOrderDTO getOrderDTO) {
 
         JwtToken jwtToken = getJWTToken();
-        Page<OrderInfo> page = new Page<>();
+        Page<OrderInfo> page = new Page<>(getOrderDTO.getPage(),getOrderDTO.getPageSize());
         page.setRecords(this.baseMapper.getOrderInfoList(page,jwtToken.getUid()));
 
         return page;
@@ -78,10 +78,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
 
     @Override
     public void remove(String orderId) {
-        JwtToken jwtToken = getJWTToken();
-        Integer id = Integer.getInteger(orderId);
-        this.baseMapper.deleteOrder(id);
-//        this.deleteById(id);
+
+        this.baseMapper.deleteOrder(orderId);
         shiroService.reloadPerms();
     }
 }
