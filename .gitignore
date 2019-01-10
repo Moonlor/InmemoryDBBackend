@@ -3,7 +3,7 @@
 *.iml
 
 .idea
-!dependency/*
+!dependency/*.jar
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
