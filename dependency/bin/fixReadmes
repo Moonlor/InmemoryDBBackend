@@ -1,0 +1,44 @@
+#
+# fixReadmes - Change README files from UNIX to DOS line endings.
+#
+# Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved. 
+#
+# This file contains proprietary information.  It is the
+# unpublished property of TimesTen, Inc.  Use, disclosure,
+# or reproduction is prohibited except as permitted by express
+# written license agreement with TimesTen, Inc.
+#
+
+use FindBin qw($Bin);
+use File::Find;
+use strict;
+use Config;
+
+find(sub {
+  if (-d $_ and ($_ eq 'PERL') or ($_ eq '3rdparty')) {
+    $File::Find::prune = 1;
+    return
+  }
+  return unless -f $_;
+  return unless (/\.txt$/i);
+  local *IN;
+  local *OUT;
+  open(IN, $_)
+    or do { warn "Can't open $File::Find::name : $!\n" ; return };
+  my $tmpfile = "$_.tmp";
+  open(OUT, "> $tmpfile")
+    or do { warn "Can't create $tmpfile : $!\n" ; return };
+  local $/ = undef;
+  my $in = <IN>;
+  print OUT $in;
+  close(OUT);
+  close(IN);
+  my $tmpfile2 = "$_.tmp2";
+  rename $_, $tmpfile2
+    or do { warn "Can't rename $_ to $tmpfile2 : $!\n"; return };
+  rename $tmpfile, $_
+    or do { warn "Can't rename $tmpfile to $_ : $!\n"; return };
+  unlink $tmpfile2;
+}, "$Bin/..");
+
+exit 0;
