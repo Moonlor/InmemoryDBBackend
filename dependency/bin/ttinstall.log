@@ -1,0 +1,33 @@
+Initializing Installation
+
+SRCDIR = C:\Users\94274\Desktop\learn_how_to_learn\Win64\
+
+SysDir = C:\WINDOWS\system32\
+
+TimesTen Version = TimesTen1122
+
+Install: TimesTen Client
+Username: 94274
+
+GroupName: ZHANGWENZHE-SUR\94274
+
+REM Patching ---------- C:\TimesTen\TT1122~1\bin\ttversion.exe ---------- now.
+ttpatchinst.exe -install "C:\TimesTen\TT1122~1\bin\ttversion.exe" "tt1122_64" 0 "94274" "C:\TimesTen\TT1122~1\\" "C:\TimesTen\TT1122~1\srv\info" N "ZHANGWENZHE-SUR\94274"
+rc = 0
+REM Patching ---------- C:\TimesTen\TT1122~1\bin\ttIsql.exe ---------- now.
+ttpatchinst.exe -install "C:\TimesTen\TT1122~1\bin\ttIsql.exe" "tt1122_64" 0 "94274" "C:\TimesTen\TT1122~1\\" "C:\TimesTen\TT1122~1\srv\info" N "ZHANGWENZHE-SUR\94274"
+rc = 0
+REM Patching ---------- C:\TimesTen\TT1122~1\bin\direct\ttIsql.exe ---------- now.
+ttpatchinst.exe -install "C:\TimesTen\TT1122~1\bin\direct\ttIsql.exe" "tt1122_64" 0 "94274" "C:\TimesTen\TT1122~1\\" "C:\TimesTen\TT1122~1\srv\info" N "ZHANGWENZHE-SUR\94274"
+rc = 3
+REM Patching ---------- C:\TimesTen\TT1122~1\bin\ttcommon1122.dll ---------- now.
+ttpatchinst.exe -install "C:\TimesTen\TT1122~1\bin\ttcommon1122.dll" "tt1122_64" 0 "94274" "C:\TimesTen\TT1122~1\\" "C:\TimesTen\TT1122~1\srv\info" N "ZHANGWENZHE-SUR\94274"
+rc = 0
+REM Patching ---------- C:\TimesTen\TT1122~1\bin\ttclient1122.dll ---------- now.
+ttpatchinst.exe -install "C:\TimesTen\TT1122~1\bin\ttclient1122.dll" "tt1122_64" 0 "94274" "C:\TimesTen\TT1122~1\\" "C:\TimesTen\TT1122~1\srv\info" N "ZHANGWENZHE-SUR\94274"
+rc = 0
+REM Patching ---------- C:\TimesTen\TT1122~1\bin\ttclientdv1122.dll ---------- now.
+ttpatchinst.exe -install "C:\TimesTen\TT1122~1\bin\ttclientdv1122.dll" "tt1122_64" 0 "94274" "C:\TimesTen\TT1122~1\\" "C:\TimesTen\TT1122~1\srv\info" N "ZHANGWENZHE-SUR\94274"
+rc = 0
+Setting up Environment Varibles
+Updating Environment

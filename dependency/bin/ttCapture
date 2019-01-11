@@ -1,0 +1,1531 @@
+
+#
+# Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+# $Date: 2014/02/20 15:38:30 $
+# $Revision: /main/21 $
+#
+
+use FindBin qw($Bin $Script);
+use Cwd;
+use warnings "all";
+use 5.8.0;
+my $startcwd = cwd;
+my $Usage = <<EOF;
+Usage:
+  $Script [-h | -help]
+  $Script [-noinstinfo] [-nosysinfo] [-stdout | -dest dir] [-logdir dir]
+            [-noconnect]
+            [<DSN> | -connstr <connstr> | <dspath>]
+
+options:
+  -h | -help    Prints this message and exits.
+  -V | -version Prints the release number and exits.
+  -noinstinfo   Do not capture any installation information.
+  -nosysinfo    Do not capture any system wide information.
+  -noconnect    Do not perform operations requiring a database
+                connection.
+  -stdout       Output everything (including errors) to stdout.
+                Default is to output to files in current directory.
+  -dest <dir>   Directory where ttCapture output files will go.
+                Default is CWD: $startcwd.
+  -logdir <dir> Full path to directory containing transaction logs.
+                Default is the base path for <dspath>. This option can
+                only be used when a <dspath> is specified.
+  <DSN>         The data source name (DSN) indicating the data store whose
+                information is to be captured.
+  <connstr>     The ODBC connection string for the data store.
+  <dspath>      The full path, without the final suffix (e.g., .ds0) of a
+                data store whose information is to be captured. This is the
+                same as the DataStore attribute found in the .odbc.ini or
+                sys.odbc.ini file.
+
+NOTE: <DSN>, -connstr, and <dspath> are mutually exclusive. If none
+is specified, no data store information is captured. Even if one is
+specified, you may not want to make a database connection (for instance
+if the database is not loaded and loading it would take a long time).
+In that case you can specify <DSN> or -connstr along with -noconnect,
+and some data store-specific information will be collected, but none
+requiring that a connection to the database be made. No connection will
+be made if <dspath> is specified.
+
+Example:
+  $Script /datastore/user/RunData
+  $Script mydsn
+  $Script -nosysinfo -noinstinfo
+EOF
+
+use strict;
+use Config;
+use Getopt::Long;
+use Sys::Hostname;
+use Fcntl;
+use File::Basename;
+import TTIsql;
+
+sub ttcapture();
+sub capture_db();
+sub ttWarn(@);
+sub ttError(@);
+sub get_ttversion();
+sub first(&@);
+sub Inform(@);
+sub get_logfile(;$$);
+sub redirect($);
+sub pr_sep();
+sub CatIt($);
+sub RunIt(@);
+sub get_db_attrs($);
+sub sysinfo_unix();
+sub sysinfo_solaris();
+sub sysinfo_linux();
+sub sysinfo_aix();
+sub sysinfo_windows();
+sub sysinfo_hpux();
+sub sysinfo_osx();
+sub sysinfo_generic();
+
+
+my $outputstdout = 0;       # output to stdout
+my $interact;               # interactive mode
+my $dumpinstall = 1;        # dump TimesTen installation info
+my $dumpsysinfo = 1;        # dump system-wide info
+my $tthome = $ENV{TT_INSTALL_DIR}; # TimesTen installation directory
+my $destdir;                # directory for output file
+my $verbose;                # verbose output
+my $dsn_or_dspath;          # either dsn or datastore path
+my $dspath;                 # DataStore attribute
+my $connstr;                # connection string
+my $dsdir;                  # directory of checkpoint files
+my $logdir;                 # database logdir
+my $dsattrs;                # datastore attributes
+my $ttisql;                 # ttIsql object if needed
+my $connect = 1;            # whether OK to connect to databse
+local *SAVESTDOUT;          # saved stdout, before redirection
+local *SAVESTDERR;          # saved stderr, before redirection
+my $is_win = ($Config{osname} eq 'MSWin32');
+
+my $saved_argv = $0;
+$saved_argv .= " @ARGV" if @ARGV;
+Getopt::Long::Configure(qw/auto_abbrev gnu_compat/);
+GetOptions('h|help'      =>  sub { print STDERR $Usage; exit(0) },
+           'v|version'   =>  sub { system "$Bin/ttVersion"; exit(0) },
+           'stdout'      =>  \$outputstdout,
+           'interactive' =>  \$interact, # Obsolete, remove later
+           'connect!'    =>  \$connect,
+           'instinfo!'   =>  \$dumpinstall,
+           'sysinfo!'    =>  \$dumpsysinfo,
+           'tthome=s'    =>  \$tthome,
+           'logdir=s'    =>  \$logdir,
+           'destdir=s'   =>  \$destdir,
+           'connstr=s'   =>  \$connstr,
+           'verbose'     =>  \$verbose,
+          ) or die $Usage;
+
+if ($outputstdout and defined($destdir)) {
+  die "$Script: cannot use -stdout with -destdir\n$Usage";
+}
+$destdir = $startcwd
+  unless defined($destdir);
+if (@ARGV == 0) {
+  if (defined($logdir)) {
+    die "The -logdir option is present, but the datastore option is missing.\n$Usage"
+  }
+} elsif (@ARGV == 1) {
+  $dsn_or_dspath = shift;
+  if (defined($connstr)) {
+    die "$Script: connection string and DSN or path specified\n$Usage";
+  }
+} else {
+  die "Too many arguments.\n$Usage";
+}
+if (!defined($tthome)) {
+  $tthome = "$Bin/..";
+}
+if (! -d $tthome) {
+  die "$Script : TThome $tthome : no such directory\n";
+}
+if (defined($logdir) and !(-d $logdir)) {
+  die "$Script : Logdir $logdir : no such directory\n";
+}
+if (defined($destdir) and !(-d $destdir)) {
+  die "$Script : Dest dir $destdir : no such directory\n";
+}
+
+use sigtrap qw(handler sig_handler normal-signals);
+
+my %ttcmd = map { $_ => qq<"$tthome/bin/$_">, lc($_) => qq<"$tthome/bin/$_"> }
+  qw( ttVersion ttStatus ttpatchinst ttIsql
+      ttRepAdmin ttSchema ttXactAdmin
+    );
+$ttcmd{dsmap} = qq{"$tthome/support/dsmap"};
+
+$| = 1;
+if (!$outputstdout) {
+  redirect(get_logfile());
+}
+
+# get installation version from ttversion -m
+my $ttv = get_ttversion();
+if (!defined($ttv)) {
+  ttError "Cannot run ttVersion, check installation";
+  # try to come up with generic version
+  $ttv = {};
+  $ttv->{os} = 'unknown';
+  $ttv->{shortversion} = 'unknown';
+}
+my $svers = $ttv->{shortversion};  # eg 1122 for 11.2.2.x.y
+my $client_only = (defined($ttv->{clientonly}) and ($ttv->{clientonly} eq 'yes'));
+
+my $daemonhomedir = first {defined} $ttv->{effective_daemonhome},
+  '/var/TimesTen';
+
+my $os;
+my $sysinfo_func;
+if ($Config{osname} eq 'aix') {
+  $os = 'aix';
+  $sysinfo_func = \&sysinfo_aix;
+} elsif ($Config{osname} eq 'darwin') {
+  $os = 'macos';
+  $sysinfo_func = \&sysinfo_osx;
+} elsif ($Config{osname} eq 'linux') {
+  $os = 'linux';
+  $sysinfo_func = \&sysinfo_linux;
+} elsif ($Config{osname} eq 'solaris') {
+  $os = 'solaris';
+  $sysinfo_func = \&sysinfo_solaris;
+} elsif ($Config{osname} eq 'hpux') {
+  $os = 'hpux';
+  $sysinfo_func = \&sysinfo_hpux;
+} elsif ($Config{osname} eq 'MSWin32') {
+  $os = 'windows';
+  $sysinfo_func = \&sysinfo_windows;
+} else {
+  $os = 'unknown';
+  $sysinfo_func = \&sysinfo_generic;
+}
+undef($sysinfo_func) if (!$dumpsysinfo);
+my $ttplatform = ($ttv->{os} or 'unknown');
+
+my $orig_path = $ENV{PATH};
+if (! $is_win) {
+  # set path to a basic path good for all UNIXes
+  $ENV{PATH} = "/sbin:/usr/sbin:/bin:/usr/bin:$ENV{PATH}";
+}
+
+my $dsn;
+
+# illegal but common usage, specifying dsn=mydsn instead of just mydsn, without -connstr
+if (defined($dsn_or_dspath) and lc(substr($dsn_or_dspath,0,4)) eq 'dsn=') {
+  $connstr = $dsn_or_dspath;
+  undef($dsn_or_dspath);
+}
+
+if (defined($dsn_or_dspath)) {
+  if ($client_only) {
+    ttWarn "Ignoring '$dsn_or_dspath' since this is a client-only installation.";
+    undef($dsn_or_dspath);
+  } elsif (-e "$dsn_or_dspath.ds0" or -e "$dsn_or_dspath.ds1") {
+    $dspath = $dsn_or_dspath;
+  } else {
+    my $bad = ($dsn_or_dspath =~ tr/[]{}(),;?*=!@/[]{}(),;?*=!@/);
+    if ($bad) {
+      warn "Ignoring DSN '$dsn_or_dspath' - contains illegal characters\n";
+      undef($dsn_or_dspath);
+    } else {
+      $dsn = $dsn_or_dspath;
+      $connstr = "dsn=$dsn";
+    }
+  }
+}
+if (!defined($dspath) and defined($connstr)) {
+  $dsn_or_dspath = 1;
+  # get connection attributes
+  $dsattrs = get_db_attrs($connstr);
+  $dspath = $dsattrs->{DataStore} if defined($dsattrs);
+  $logdir = $dsattrs->{LogDir} if (defined($dsattrs) and !defined($logdir));
+}
+if (defined($dspath)) {
+  $dsdir = dirname($dspath);
+}
+if (defined($dsdir) and !defined($logdir)) {
+  $logdir = $dsdir;
+}
+
+# do the bulk of the outputs
+ttcapture();
+if ($connect and defined($connstr)) {
+  capture_db(); # things requiring a connection
+}
+
+pr_sep();
+print "done at ", scalar(localtime), "\n";
+
+$ttisql->close() if (defined($ttisql));
+exit 0;
+
+################################################################
+
+# Print error or warning.
+# Normally print to both the original stderr and to the log file
+# (i.e. redirected stdout).
+sub ttMsg(@) {
+  print "@_\n";
+  if (!$outputstdout) {
+    print SAVESTDERR "@_\n";
+  }
+} # ttMsg
+
+# Print warning.
+sub ttWarn(@) {
+  ttMsg("WARNING: @_");
+} # ttWarn
+
+# Print warning.
+sub ttError(@) {
+  ttMsg("ERROR: @_");
+} # ttError
+
+# backslashify for Windows
+sub dospath($) {
+  my $p = shift;
+  return $p unless $is_win;
+  $p =~ s{/}{\\}g;
+  $p;
+} # dospath
+
+# Run ttversion to get the installation parameters
+sub get_ttversion() {
+  local *IN;
+  local $_;
+  open(IN, qq{"$Bin/ttVersion" -m |})
+    or do { warn "Can't run $Bin/ttVersion: $!"; return undef };
+  my %v;
+  while (<IN>) {
+    chomp;
+    next unless (/^(.*?)=(.*)/);
+    $v{$1} = $2;
+  }
+  close(IN);
+  \%v;
+} # get_ttversion
+
+# Return first item in list for which code ref is defined when evaluated.
+sub first(&@) {
+  my $code = shift;
+  &$code && return $_ for @_;
+  undef;
+} # first
+
+# Print verbose messages
+sub Inform(@) {
+  print "@_\n" if $verbose;
+} # Inform
+
+# return name of log file, usually cwd/ttcapture.YYMMDD.HHSS.log
+sub get_logfile(;$$) {
+  my ($bname, $ext) = @_;
+  $bname = 'ttcapture' unless defined($bname);
+  $ext = 'log' unless defined($ext);
+  my @t = localtime($^T);
+  sprintf "%s/%s.%04d%02d%02d.%02d%02d.%s",
+    $destdir, $bname,
+      1900+$t[5], $t[4]+1, $t[3], $t[2], $t[1],
+        $ext;
+} # get_logfile
+
+# Redirect output to given file
+sub redirect($) {
+  my $path = shift;
+  open(SAVESTDOUT, ">&STDOUT");
+  open(SAVESTDERR, ">&STDERR");
+  print "Capturing information to file @{[dospath $path]}\n";
+  open(STDOUT, "> $path")
+    or do { warn "Can't redirect stdout to $path: $!\n"; return undef };
+  open(STDERR, ">&STDOUT")
+    or warn "Can't redirect stderr: $!\n";
+  $| = 1;
+  1;
+} # redirect
+
+# print a separator
+sub pr_sep() {
+  print "\n" . '@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@~@' . "\n";
+} # pr_sep
+
+# Dump a file
+sub CatIt($) {
+  my $path = shift;
+  local *IN;
+  my $buf;
+  pr_sep();
+  print "==> $path\n";
+  sysopen IN, $path, O_RDONLY
+    or do { print "Can't open $path: $!\n"; return };
+  for (;;) {
+    $buf = '';
+    my $n = sysread IN, $buf, 8192;
+    if (!defined($n)) {
+      print "Error reading $path: $!\n";
+      last;
+    }
+    last if ($n == 0);
+    syswrite STDOUT, $buf, $n;
+  }
+  close(IN);
+} # CatIt
+
+# Function to echo and run a command
+sub RunIt(@) {
+  my @command = @_;
+  pr_sep();
+  print "==> @command\n";
+  if ($is_win) {
+    # alarm + system doesn't work well on Windows
+    system @command;
+  } else {
+    my $timeout = 60;
+    eval {
+      local $SIG{ALRM} = sub { die "TTCAPTURETIMEOUT\n" };
+      alarm $timeout;
+      system @command;
+      alarm 0;
+    };
+    alarm 0;
+    if ($@) {
+      if ($@ =~ /TTCAPTURETIMEOUT/) {
+        print "command timed out: @command\n";
+      } else {
+        print "error on command @command: $@\n";
+      }
+    }
+  }
+} # RunIt
+
+# Get hash of var->value from an options file
+sub get_ini_file($;$) {
+  my ($path, $lcase_options) = @_;
+  local *IN;
+  local $_;
+  open(IN, $path)
+    or return;
+  my %opt;
+  while (<IN>) {
+    chomp;
+    next if (/^\s*#/);
+    if (/^\s*-(\w+)(?:\s+(.*))?/) {
+      my ($var, $val) = ($1, $2);
+      $val = 1 unless defined($val);
+      $var = lc($var) if ($lcase_options);
+      $opt{$var} = $val;
+    }
+  }
+  close(IN);
+  \%opt;
+} # get_ini_file
+
+
+# do dir and return drive letter, serial number, and bytes free
+sub win_dir($) {
+  my $path = dospath(shift);
+  my @dinfo;
+  local *IN;
+  local $_;
+  my $cmd = defined($ENV{comspec}) ? $ENV{comspec} : 'cmd';
+  open(IN, qq{$cmd /c dir "$path" |})
+    or do { return undef };
+  while (<IN>) {
+    chomp;
+    if (/Volume in drive (\S+) /) {
+      push(@dinfo, $1);
+    } elsif (/Volume Serial Number is (.*)/) {
+      push(@dinfo, $1);
+    } elsif (/([\d,]+) bytes free/) {
+      push(@dinfo, $1);
+    }
+  }
+  close(IN);
+  if (@dinfo == 3) {
+    return \@dinfo;
+  }
+  undef;
+} # win_dir
+
+# show free bytes for some paths
+my %win_disk_free_seen;
+sub win_disk_free($) {
+  my $path = shift;
+  return unless defined($path);
+  my %seen;
+  pr_sep();
+  my $d = win_dir($path);
+  if (defined($d)) {
+    my ($drive, $sno, $free) = @$d;
+    if (!defined($win_disk_free_seen{$sno})) {
+      $win_disk_free_seen{$sno} = $drive;
+      print "$drive : $free bytes free\n";
+    }
+  }
+} # win_disk_free
+
+# Function to output CRS specific information
+sub DumpCRSOptions() {
+  my $crsfname = "$daemonhomedir/ttcrsagent.options";
+  if (! -f $crsfname) {
+    pr_sep();
+    print "no $crsfname\n";
+    return;
+  }
+  my $opt = get_ini_file($crsfname, 1);
+  return unless (defined($opt) and defined($opt->{crshome}));
+  my $crshome = $opt->{crshome};
+  RunIt qq{"$crshome/bin/ocrcheck"};
+  RunIt qq{"$crshome/bin/crsctl" check crs};
+  RunIt qq{"$crshome/bin/crsctl" check cluster};
+  RunIt qq{"$crshome/bin/crsctl" check cluster -all};
+  RunIt qq{"$crshome/bin/crs_stat" -p};
+} # DumpCRSOptions
+
+# Get full set of database attributes given a connection string.
+sub get_db_attrs($) {
+  my $connstr = shift;
+  if (!defined($ttisql)) {
+    $ttisql = TTIsql->new("$tthome/bin/ttIsql");
+  }
+  if (!defined($ttisql)) {
+    ttWarn("cannot create ttIsql object");
+    return;
+  }
+  my $out;
+  if (! $ttisql->run(qq{connect "$connstr;NoConnect=1"}, 0, \$out)) {
+    ttWarn("Can't get database attributes");
+    return;
+  }
+  my %attrs;
+  if ($out =~ /^Connection successful: (.*)/m) {
+    my $long_connstr = $1;
+    foreach my $e (split(/;/, $long_connstr)) {
+      if ($e =~ /(\w+)=(.*)/) {
+        my ($attr, $val) = ($1, $2);
+        $attrs{$attr} = $val;
+        my $attrlc = lc($attr);
+        if ($attrlc ne $attr) {
+          $attrs{$attrlc} = $val;
+        }
+      }
+    }
+  } else {
+    ttWarn("Can't find database attributes");
+    return;
+  }
+
+  \%attrs;
+} # get_db_attrs
+
+# signal handler for "normal" signals - just exit
+sub sig_handler(@) {
+  print STDERR "\n$Script: Signal @_ received! Aborting...";
+  exit(1);
+} # sig_handler
+
+# return string passed in or "(undefined)" if not defined
+sub def_str($) {
+  my $val = shift;
+  defined($val) ? $val : '(undefined)';
+} # def_str
+
+# return the user name
+sub get_username() {
+  my $u;
+  if ($is_win) {
+    $u = $ENV{USERNAME};
+  } else {
+    $u = getlogin || getpwuid($<);
+  }
+  def_str($u);
+} # get_username
+
+# dump information about the user, UNIX version
+sub show_user_unix() {
+  my $ru = def_str(getpwuid($<));
+  my $eu = def_str(getpwuid($>));
+  my $rg = def_str(getgrgid($());
+  my $eg = def_str(getgrgid($)));
+  print "UID $< ($ru), EUID $> ($eu)\n";
+  print "GID $( ($rg), EGID $) ($eg)\n";
+} # show_user_unix
+
+# dump information about the user, Windows version
+sub show_user_win() {
+  my $u = def_str $ENV{USERNAME};
+  my $d = $ENV{USERDOMAIN};
+  pr_sep();
+  print "User: ", def_str($ENV{USERNAME}), "\n";
+  if (defined($ENV{USERDOMAIN})) {
+    print "Domain: $ENV{USERDOMAIN}\n";
+  } else {
+    print "(no domain)\n";
+  }
+  print "IsAdminUser: ", Win32::IsAdminUser() ? 't' : 'f', "\n";
+  RunIt('gpresult /v');
+} # show_user_win
+
+# list directory contents, optionally recursive
+sub list_dir($;$) {
+  my ($path, $recurse) = @_;
+  # Windows dir has issues if not given a valid path
+  return unless defined($path);
+  if (! -d $path) {
+    if (-e $path) {
+      print "$path : not a directory\n";
+    } else {
+      print "$path : no such directory or file\n";
+    }
+    return;
+  }
+  my $command;
+  if ($is_win) {
+    my $cmd = defined($ENV{comspec}) ? $ENV{comspec} : 'cmd';
+    $command = qq{$cmd /c dir "@{[ dospath($path)]}" /Q};
+    $command .= ' /S' if $recurse;
+  } else {
+    $command = '/bin/ls -al';
+    $command .= 'R' if $recurse;
+    $command .= qq{ "$path"};
+  }
+  RunIt($command);
+} # list_dir
+
+# run uname or get similar info on Windows
+sub do_uname() {
+  if ($is_win) {
+    pr_sep();
+    my @wv = Win32::GetOSVersion();
+    if (@wv == 9) {
+      my ($string, $major, $minor, $build, $id,
+          $spmajor, $spminor, $suitemask, $producttype) = @wv;
+      $producttype = ($producttype == 1) ? 'Workstation' :
+          ($producttype == 3) ? 'Server' :
+          ($producttype == 2) ? 'Domaincontroller' : $producttype;
+      my $st = sprintf "0x%08x", $suitemask;
+      print "Win ver: $major.$minor $string, build $build, id $id, sp $spmajor.$spminor, suite $st, $producttype\n";
+    } elsif (@wv == 0) {
+      print "Win32::GetOSVersion returned nothing\n";
+    } else {
+      local $" = ", ";
+      print "Win32::GetOSVersion : @wv\n";
+    }
+  } else {
+    RunIt "uname -a";
+  }
+} # do_uname
+
+# dump disk free space
+sub do_df($) {
+  my $path = shift;
+  if ($is_win) {
+    win_disk_free($path);
+  } else {
+    RunIt qq{df -k "$path"};
+  }
+} # do_df
+
+# dump information about a database that doesn't require a connection
+sub dump_db_info() {
+  return unless defined($dsn_or_dspath);
+  CatIt "$dspath.inval";
+  CatIt "$dspath.trace";
+  if (defined($dsdir)) {
+    do_df($dsdir);
+    list_dir($dsdir, 1);
+    if ($logdir ne $dsdir) {
+      do_df($logdir);
+      list_dir($logdir, 1);
+    }
+  }
+  RunIt qq{$ttcmd{dsmap} -connectOptions -hdr -dsname "$dspath.ds0"};
+  RunIt qq{$ttcmd{dsmap} -connectOptions -hdr -dsname "$dspath.ds1"};
+} # dump_db_info
+
+# dump a registry key
+sub dump_registry($;$) {
+  my ($key, $only_system32) = @_;
+  my $windir = $ENV{windir};
+  $windir = 'c:/windows' unless defined($windir);
+  RunIt qq{$windir/System32/reg query "$key" /s};
+  if (!$only_system32 and -d "$windir/SysWOW64") {
+    RunIt qq{$windir/SysWOW64/reg query "$key" /s};
+  }
+} # dump_registry
+
+# try to find the temp directory on Windows
+sub win_tmpdir() {
+  first { defined($_) and (-d $_) }
+        $ENV{TEMP}, $ENV{TMP}, 'c:\temp',
+        "%USERPROFILE%\\AppData\\Local\\Temp",
+        "%USERPROFILE%\\Local Settings\\Temp";
+} # win_tmpdir
+
+# dump the file version for a DLL
+sub win_show_version($) {
+  my $path = shift;
+  my $windir = $ENV{windir};
+  $windir = 'c:/windows' unless defined($windir);
+  my $powershell_cmd = "$windir/system32/WindowsPowershell/v1.0/powershell.exe";
+  # Use Powershell if it is available
+  if (-e $powershell_cmd) {
+    my $powershell_script = "dir  $path\\*.dll | %{gcm \$\_.FullName} | select -expand File*";
+    RunIt qq($powershell_cmd -command "$powershell_script" );
+    $powershell_script = "dir  $path\\*.exe | %{gcm \$\_.FullName} | select -expand File*";
+    RunIt qq($powershell_cmd -command "$powershell_script" );
+  } else {
+    # If powershell isn't available, fall back to vbs
+    my $tmpdir = win_tmpdir();
+    return unless defined($tmpdir);
+    my $scr = "$tmpdir/$$.vbs";
+    local *TMP;
+    open(TMP, "> $scr")
+      or do { warn "Can't create $scr: $!\n"; return };
+    print TMP <<EOF;
+WScript.Echo WScript.Arguments(0) + " version " + CreateObject("Scripting.FileSystemObject").GetFileVersion(WScript.Arguments(0)) 
+EOF
+    close(TMP);
+    opendir (DIR, $path) or die $!;
+    my @exefiles 
+	= grep {
+        m/\.exe$/	# ends in exe
+    } readdir (DIR);
+    rewinddir (DIR);
+    my @dllfiles 
+	= grep {
+        m/\.dll$/	# ends in dll
+    } readdir (DIR);
+
+    foreach my $myfile (@exefiles) {
+        RunIt qq{cscript //Nologo "$scr" "$path\/$myfile"};
+    }
+    foreach my $myfile (@dllfiles) {
+	RunIt qq{cscript //Nologo "$scr" "$path\/$myfile"};
+    }
+    closedir (DIR);
+    unlink $scr;
+
+  }
+} # win_show_version
+
+# dump information about the installation
+sub dump_install_info() {
+  list_dir($Bin, 1);
+  list_dir("$tthome/lib", 1);
+  list_dir($daemonhomedir, 1);
+  my $ttvardir = '/var/TimesTen' if (-d '/var/TimesTen' and !$is_win);
+  if ($is_win) {
+    list_dir("$tthome/srv");
+    CatIt("$tthome/bin/ttinstall.log");
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttVersion.exe"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttIsql.exe"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/tten${svers}.dll"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/tten${svers}d.dll"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttcommon${svers}.dll"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttcommon${svers}d.dll"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttclient${svers}.dll"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttclientdv${svers}.dll"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttservercommon${svers}.dll"});
+
+    win_show_version("$tthome/bin");
+    win_show_version("$tthome/lib"); 
+    dump_registry('HKLM\SOFTWARE\TimesTen');
+    dump_registry('HKLM\SOFTWARE\ODBC');
+    dump_registry('HKLM\SOFTWARE\Microsoft\ODBC');
+    dump_registry('HKCU\SOFTWARE\ODBC');
+
+  } else {
+    list_dir($ttvardir, 1) if (defined($ttvardir));
+    CatIt($ENV{ODBCINI}) if (defined($ENV{ODBCINI}));
+    CatIt("$ENV{HOME}/.odbc.ini");
+    CatIt($ENV{SYSODBCINI}) if (defined($ENV{SYSODBCINI}));
+    CatIt("$daemonhomedir/sys.odbc.ini") if (defined($daemonhomedir));
+    CatIt("$ttvardir/sys.odbc.ini") if (defined($ttvardir));
+    CatIt($ENV{SYSTTCONNECTINI}) if (defined($ENV{SYSTTCONNECTINI}));
+    CatIt("$daemonhomedir/sys.ttconnect.ini") if (defined($daemonhomedir));
+    CatIt("$ttvardir/sys.ttconnect.ini") if (defined($ttvardir));
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttVersion"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttIsqlCmd"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/bin/ttIsqlCSCmd"});
+    foreach my $ttcs (glob("$tthome/bin/ttcserver*")) {
+      RunIt(qq{$ttcmd{ttpatchinst} -show "$ttcs"});
+    }
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/lib/libtten.so"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/lib/libttenD.so"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/lib/libttclient.so"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/lib/libttco.so"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/lib/libttcoD.so"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/lib/libttpl.so"});
+    RunIt(qq{$ttcmd{ttpatchinst} -show "$tthome/lib/libttplD.so"});
+  }
+  CatIt("$daemonhomedir/ttendaemon.options") if (defined($daemonhomedir));
+  CatIt("$daemonhomedir/timestend.pid") if (defined($daemonhomedir));
+  CatIt("$daemonhomedir/snmp.ini") if (defined($daemonhomedir));
+  CatIt("$ttvardir/snmp.ini") if (defined($ttvardir));
+  CatIt($ENV{TT_SNMP_INI}) if (defined($ENV{TT_SNMP_INI}));
+  CatIt("$daemonhomedir/ttcrsagent.options") if (defined($daemonhomedir));
+  CatIt("$daemonhomedir/cluster.oracle.ini") if (defined($daemonhomedir));
+  CatIt("$daemonhomedir/.install_log") if (defined($daemonhomedir));
+  CatIt("$daemonhomedir/install_log") if (defined($daemonhomedir));
+} # dump_install_info
+
+# note not quite like typ/whence in the shell since it doesn't
+# handle aliases or shell functions
+sub whence($) {
+  my $command = shift;
+  pr_sep();
+  print "=> whence $command\n";
+  my $path_sep = $is_win ? ';' : ':';
+  foreach my $path (split(/$path_sep/, $orig_path)) {
+    if (-x "$path/$command") {
+      print "$path/$command\n";
+      return;
+    }
+  }
+  print "$command not found in path\n";
+} # whence
+
+# common outputs for all UNIX and Linux systems
+sub sysinfo_unix() {
+  RunIt 'uname -a';
+  RunIt '/usr/bin/id';
+  CatIt '/etc/hosts';
+} # sysinfo_unix
+
+# dump system info for Solaris
+sub sysinfo_solaris() {
+  sysinfo_unix();
+  CatIt '/etc/release';
+  RunIt 'who -r';
+  RunIt 'showrev';
+  RunIt 'psrinfo -v';
+  RunIt '/usr/sbin/zoneadm list -cv';
+  chomp(my $arch = `uname -i`);
+  RunIt "/usr/platform/$arch/sbin/prtdiag -v";
+  RunIt '/sbin/ifconfig -a';
+  CatIt '/etc/inet/ipnodes';
+  RunIt 'sysdef';
+  RunIt 'ipcs -a';
+  RunIt 'mount -p';
+  RunIt 'df -k';
+  RunIt 'swap -s';
+  RunIt 'prtconf';
+  CatIt '/etc/system';
+  CatIt '/etc/project';
+  RunIt 'getconf -a';
+  list_dir('/usr/lib');
+  list_dir('/lib');
+  RunIt 'netstat -a';
+  RunIt 'netstat -i';
+  RunIt 'netstat -r';
+  RunIt 'vmstat';
+  RunIt 'vmstat -s';
+  RunIt 'iostat';
+  RunIt 'iostat -E';
+  whence 'cc';
+  RunIt 'cc -V';
+  whence 'gcc';
+  RunIt 'gcc -v';
+  whence 'java';
+  RunIt 'java -version';
+  RunIt '/usr/ucb/ps auxeww';
+  #    RunIt showrev -p
+} # sysinfo_solaris
+
+# dump system info for Linux
+sub sysinfo_linux() {
+  sysinfo_unix();
+  RunIt 'runlevel';
+  CatIt '/etc/redhat-release';
+  CatIt '/etc/enterprise-release';
+  CatIt '/etc/oracle-release';
+  CatIt '/etc/mvl-release';
+  CatIt '/proc/version';
+  RunIt 'procinfo';
+  CatIt '/proc/cpuinfo';
+  CatIt '/proc/meminfo';
+  RunIt '/sbin/ifconfig -a';
+  RunIt '/sbin/ip addr show';
+  CatIt '/etc/host.conf';
+  CatIt '/etc/security/limits.conf';
+  CatIt '/etc/sysconfig/hwconf';
+  CatIt '/etc/sysconfig/iptables-config';
+  CatIt '/etc/sysconfig/network';
+  RunIt '/usr/bin/groups';
+  RunIt 'sysctl -a';
+  RunIt 'ipcs -a';
+  RunIt 'mount';
+  RunIt 'df -k';
+  RunIt '/usr/bin/free';
+  whence 'gcc';
+  RunIt 'gcc -v';
+  my @d = </lib/libc*>;
+  foreach my $d (@d) {
+    if (-d $d) {
+      list_dir $d;
+    }
+  }
+  list_dir '/usr/lib';
+  list_dir('/lib');
+  whence 'java';
+  RunIt 'java -version';
+  RunIt 'netstat -a';
+  RunIt 'netstat -i';
+  RunIt 'netstat -r';
+  RunIt 'vmstat -s';
+  RunIt 'vmstat -w';
+  RunIt 'iostat';
+  RunIt 'iostat -x';
+  RunIt 'ps auxeww';
+} # sysinfo_linux
+
+# dump system info for AIX
+sub sysinfo_aix() {
+  sysinfo_unix();
+  RunIt 'oslevel -r';
+  RunIt 'who -r';
+  RunIt 'prtconf';
+  RunIt '/etc/ifconfig -a';
+  RunIt 'lsattr -E -l sys0';
+  RunIt 'ipcs -a';
+  RunIt 'mount';
+  RunIt 'df -k';
+  RunIt 'lsps -a';
+  RunIt 'getconf -a';
+  list_dir '/usr/lib';
+  whence 'cc_r';
+  whence 'java';
+  RunIt 'java -version';
+  RunIt 'ps auxeww';
+  RunIt 'netstat -a -o';
+  RunIt 'netstat -i';
+  RunIt 'netstat -r';
+  RunIt 'vmstat -s';
+  RunIt 'vmstat -w';
+  RunIt 'iostat';
+  RunIt 'iostat -a';
+  # RunIt instfix -i
+} # sysinfo_aix
+
+# dump system info for HP-UX
+sub sysinfo_hpux() {
+  RunIt '/usr/contrib/bin/machinfo';
+  RunIt 'who -r';
+  RunIt 'model';
+  RunIt 'getconf KERNEL_BITS';
+  RunIt 'getconf HW_CPU_SUPP_BITS';
+  RunIt 'file /stand/vmunix';
+  RunIt 'grep processor /var/adm/syslog/syslog.log';
+  RunIt 'grep Physical /var/adm/syslog/syslog.log';
+  RunIt 'netstat -in';
+  RunIt 'sysdef';
+  RunIt 'ipcs -a';
+  RunIt 'mount -p';
+  RunIt 'bdf';
+  RunIt 'swapinfo -at';
+  CatIt '/etc/services.window';
+  RunIt 'kmtune';
+  RunIt 'kctune';
+  list_dir '/usr/lib';
+  whence 'gcc';
+  RunIt 'gcc -v';
+  whence 'java';
+  RunIt 'java -version';
+  RunIt 'ps -eflx';
+} # sysinfo_hpux
+
+# dump system info for Windows
+sub sysinfo_windows() {
+  show_user_win();
+  RunIt('ipconfig /all');
+  RunIt('netstat /p tcp /rn');
+  # fsutil needs to be run by admin
+  RunIt('fsutil fsinfo volumeinfo c:');
+  RunIt('fsutil fsinfo ntfsinfo c:');
+  RunIt('fsutil fsinfo statistics c:');
+  RunIt('systeminfo');
+  if (defined($ENV{SystemRoot}) and -e "$ENV{SystemRoot}/system32/drivers/etc/hosts") {
+    CatIt "$ENV{SystemRoot}/system32/drivers/etc/hosts";
+  } else {
+    pr_sep();
+    print "Can't find hosts file\n";
+  }
+
+  my $msinfo_outfile = dospath(get_logfile('ttcapture', 'nfo'));
+  print SAVESTDERR "Creating msinfo dump in $msinfo_outfile\n" unless $outputstdout;
+  print "Creating msinfo dump in $msinfo_outfile\n"
+    unless ($outputstdout);
+  RunIt(qq{"C:\\Program Files\\Common Files\\Microsoft Shared\\MSInfo\\MSINFO32.EXE" /nfo "$msinfo_outfile" /categories SystemSummary+ComponentsNetwork+SWEnvEnvVars+SWEnvRunningTasks+SWEnvServices});
+
+  if (defined($ENV{SystemRoot})) {
+    foreach my $dir (<$ENV{SystemRoot}/winsxs/*CRT*>,<$ENV{SystemRoot}/winsxs/*MFC*>) {
+      list_dir($dir);
+    }
+  }
+} # sysinfo_windows
+
+# Mac OS/X specifics
+sub sysinfo_osx() {
+  RunIt 'ipcs -a';
+  RunIt 'sw_vers';
+  RunIt 'netstat -a';
+  RunIt 'netstat -i';
+  RunIt 'netstat -r';
+  RunIt 'vm_stat';
+  RunIt 'iostat';
+  RunIt '/sbin/ifconfig -a';
+} # sysinfo_osx
+
+# dump generic system info
+sub sysinfo_generic() {
+} # sysinfo_generic
+
+# if TNS_ADMIN is set, show the value and dump tnsnames.ora
+sub dump_tnsadmin() {
+  local *IN;
+  local $_;
+  my $tns_admin;
+  # try to get TNS_ADMIN from the daemon's environment
+  pr_sep();
+  if (open(IN, "$ttcmd{ttStatus} -debug |")) {
+    while (<IN>) {
+      chomp;
+      if (/TNS_ADMIN=(.*)/) {
+        $tns_admin = $1;
+        print "==> TNS_ADMIN: $tns_admin (from daemon environment)\n";
+        last;
+      }
+    }
+    close(IN);
+  }
+  if (!defined($tns_admin)) {
+    # maybe the daemon is down, try to get it from the options file
+    my $ini = get_ini_file("$daemonhomedir/ttendaemon.options", 1);
+    if (defined($ini) and defined($ini->{tns_admin})) {
+      $tns_admin = $ini->{tns_admin};
+      print "==> TNS_ADMIN: $tns_admin (from ttendaemon.options)\n";
+    }
+  }
+  if (defined($tns_admin)) {
+    CatIt("$tns_admin/tnsnames.ora");
+  } else {
+    print "==> TNS_ADMIN: not set\n";
+  }
+} # dump_tnsadmin
+
+# Dump the user's environment.
+# For the environment of the TimesTen daemons,
+# look at the ttstatus -debug output instead.
+sub dump_environment() {
+  pr_sep();
+  print "User environment:\n";
+  foreach my $var (sort keys(%ENV)) {
+    print "$var=$ENV{$var}\n";
+  }
+  dump_tnsadmin();
+} # dump_environment
+
+# Dump info about the user, system, etc.
+sub ttcapture() {
+  print "$saved_argv\n";
+  print scalar(localtime($^T)), " user ", get_username(), " on ", hostname, "\n";
+  print "running $^X version = $]\n";
+
+  do_uname();
+  RunIt "$ttcmd{ttVersion}";
+  RunIt "$ttcmd{ttVersion} -m";
+  RunIt "$ttcmd{ttStatus}";
+  RunIt "$ttcmd{ttStatus} -debug";
+
+  if ($is_win and defined($ENV{SystemRoot})) {
+    RunIt "$ENV{SystemRoot}/system32/whoami /all";
+  }
+
+  DumpCRSOptions();
+  dump_db_info();
+  dump_install_info() if ($dumpinstall);
+  $sysinfo_func->() if defined($sysinfo_func);
+  dump_environment();
+} # ttcapture
+
+# Run a single command in ttIsql, print the output.
+sub run_ttisql_cmd($;$) {
+  my ($comm, $die_on_error) = @_;
+  my $out;
+  $ttisql->run($comm, $die_on_error, \$out);
+  $out =~ s/^con1:\s*$//m;
+  pr_sep();
+  print "$comm :\n", $out, "\n";
+} # run_ttisql_cmd
+
+# capture items that require a database connection
+sub capture_db() {
+  my $ttrepadmin = ($is_win or !defined($ttcmd{ttrepadmin})) ?
+    'ttrepadmin' : $ttcmd{ttrepadmin};
+  my $ttschema = ($is_win or !defined($ttcmd{ttschema})) ?
+    'ttschema' : $ttcmd{ttschema};
+  my $ttxactadmin = ($is_win or !defined($ttcmd{ttxactadmin})) ?
+    'ttxactadmin' : $ttcmd{ttxactadmin};
+  eval {
+    my ($s, $comm, $out);
+    $ttisql->run(qq{connect "$connstr"}, 1, \$out);
+    # get connection attributes - note not necessarily the
+    # same as those in effect when the issue happened
+    run_ttisql_cmd 'call ttconfiguration';
+    # replication state
+    run_ttisql_cmd qq{host "$ttrepadmin" -showconfig -connstr "$connstr"};
+    run_ttisql_cmd qq{host "$ttrepadmin" -showStatus -detail -connstr "$connstr"};
+    run_ttisql_cmd 'repschemes';
+    run_ttisql_cmd 'vertical call ttlogholds';
+    run_ttisql_cmd 'vertical call ttbookmark';
+    run_ttisql_cmd 'vertical call ttreplctnsget';
+    run_ttisql_cmd 'vertical select * from ttrep.reppeers';
+    run_ttisql_cmd 'vertical select * from ttrep.ttstores';
+    # info from ttSchema
+    run_ttisql_cmd qq{host "$ttschema" -list all -connstr "$connstr"};
+    # show latches
+    run_ttisql_cmd qq{host "$ttxactadmin" -latch}; # don't need connstr
+    # other misc. info
+    run_ttisql_cmd 'call ttsysstatslevelget';
+    run_ttisql_cmd 'call ttoptStatsExport';
+    # performance info
+    run_ttisql_cmd q{select rtrim(t.tblowner) || '.' || rtrim(t.tblname) tblfullname,s.numtups,to_date(s.laststatsupdate,'DY MON DD HH24:MI:SS YYYY') lsu from sys.tables t, sys.tbl_stats s where t.tblid=s.tblid and tblowner!='SYS' and tblowner!='TTREP' order by tblfullname};
+    run_ttisql_cmd 'dssize';
+    run_ttisql_cmd 'call ttSQLCmdCacheInfoGet';
+    run_ttisql_cmd 'call ttSQLCmdCacheInfo';
+    run_ttisql_cmd 'call ttSQLCmdQueryPlan';
+    run_ttisql_cmd q{select * from systemstats where name not like 'unused%'};
+    $ttisql->run('disconnect', 1);
+  };
+  if ($@) {
+    print "ERROR: $@\n";
+  }
+} # capture_db
+
+
+package TTIsql;
+
+
+BEGIN {
+  use vars qw($VERSION);
+  $VERSION = '1.00';
+}
+
+use strict;
+use IPC::Open3;
+use Carp;
+use Config;
+use POSIX qw(WNOHANG);
+
+
+
+################################################################
+# Constructor.
+sub new
+{
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $self = {};
+  bless($self, $class);
+
+  # figure out where ttIsql is
+  my $arg = shift;
+  my @options = @_;
+  my $pgm = 'ttIsql';
+  my $tt;
+  if (defined($arg)) {
+    $pgm = $arg;
+  }
+
+  # do open3
+  my ($in, $out);
+  my $pid = open3($out, $in, undef, $pgm, ('-interactive', @options));
+  if (! defined($pid)) {
+    carp "Couldn't start ttIsql";
+    return undef;
+  }
+  { my $oldfh = select($out); $| = 1; select($oldfh) }
+
+  # set our parameters
+  $self->{pid} = $pid;
+  $self->{waitpid} = $pid;    # waitpid is used in waitpid call
+  $self->{in} = $in;
+  $self->{out} = $out;
+  $self->{verbosePrefixIn} = '<< ';
+  $self->{verbosePrefixOut} = '>> ';
+  $self->{pgm} = $pgm;
+  $self->{errstr} = '';
+  $self->{customPrompt} = [] ;
+  # default to using columnlabels to discover column names
+  $self->{columnlabels} = 1;
+  $self->{isWin} = ($Config{osname} =~ /^MSWin32/);
+
+
+  # Do first read.
+  # If ttIsql can't be found, the defined($pid) probably
+  # still works (it's the pid of the shell), but you will
+  # get an error here.
+  my $s = readUntilPrompt($self);
+  if (($s =~ /exec.*failed/) or
+      ($s =~ /exit;/) or    # Something happened to cause autoexit
+      ($s =~ /The name specified is not recognized/) or
+      ($s =~ /Error initializing/) or  # Error initializing dynamic load:
+      ($s =~ /command failed/)) {
+    $s =~ s/failed at .*/failed/;
+    chomp($s);
+    $s =~ s/\r?\n/ /g;
+    carp $s;
+    return undef;
+  }
+
+  if ($self->{isWin}) {
+    # On Windows, open3() uses launches cmd.exe, which in turn launches ttIsql
+    # In this case $pid is the pid of cmd.exe, not ttIsql.
+    # Use the ttIsql command 'define' command to determine the real pid.
+    # See bug 13610643
+    my $pid_from_ttisql;
+    run ($self, "define _pid", 0, \$pid_from_ttisql);
+    chomp ($pid_from_ttisql);
+
+    my @pieces = split (/"/, $pid_from_ttisql);
+    my $newpid = $pieces[1];
+
+    # Make sure the newpid is defined and numeric. TtIsql version 7.0 does
+    # not understand "define" and will return the error message:
+    #   "An existing connection is required to execute this command"
+    # in which case $newpid == 'connection'
+    #
+    if (defined ($newpid) && ($pid ne $newpid) && ($newpid =~ /^\d+$/ )) {
+      $self->{pid} = $newpid;
+    }
+  }
+
+  # return our reference
+  $self;
+} # constructor
+
+
+################################################################
+# Read from the program until we get a prompt or a read
+# failure.  Return what we read.
+sub readUntilPrompt($)
+{
+  my $self = shift;
+  my $in = $self->{in};
+  my $s = '';
+  # Keep reading until we get a prompt.
+  LINE: for (;;) {
+    my $buf = '';
+    my $n = sysread $in, $buf, 32768;
+    if ($self->{verbose}) {
+      (my $tmp = $buf) =~ s/^/$self->{verbosePrefixIn}/mg;
+      print STDERR $tmp;
+    }
+    last LINE if ($n <= 0);
+    # ??? are there any other prompts
+    $s .= $buf;
+    # Need to scan entire buffer for prompt now, since there is
+    # no guarantee that entire prompt will be flushed in one
+    # sysread.
+    my $atend = (($s =~ s/(\r?\n?)(Command|^ {7})>\s*$/$1/) or
+                 ($s =~ s/(\r?\n?)\s*Enter Parameter \d+.*?>\s*$/$1/));
+
+    last LINE if $atend;
+    if (scalar(@{$self->{customPrompt}}) > 0)
+    {
+      foreach my $customPrompt (@{$self->{customPrompt}})
+      {
+        last LINE if $s =~ /${customPrompt}/;
+      }
+    }
+
+  }
+  print STDERR "\n" if ($self->{verbose});
+  $s =~ s/\r\n/\n/g;  # take out CRs; user may print the string,
+                      # which would add extra CRs in again
+  $s;
+} # readUntilPrompt
+
+
+################################################################
+# Mark as closed - for internal use only.
+sub mark_invalid($)
+{
+  my $self = shift;
+  $self->{closed} = 1;
+} # mark_invalid
+
+################################################################
+# Write a command, read the results, return the results.
+sub write($$)
+{
+  my ($self, $command) = @_;
+
+  # append a semicolon so don't have to remember it, but
+  # don't do it if we detect a bare slash, used to end a PL/SQL block
+  $command .= ';' unless ($command =~ /;$/ or $command =~ m!(^|\n)\s*/\s*(\n|$)!s);
+  return $self->writeRAW($command) unless defined wantarray;
+  my $results = $self->writeRAW($command);
+  return wantarray ? split( /\n/, $results ) : $results;
+}
+
+################################################################
+# Write a command, read the results, return the results.
+sub writeRAW($$)
+{
+  my ($self, $command) = @_;
+  my $out = $self->{out};
+
+  if ($self->{closed}) {
+    carp "Attempt to write on closed object";
+    return undef;
+  }
+  local $SIG{PIPE} = sub { mark_invalid($self) };
+
+  print STDERR "$self->{verbosePrefixOut}$command\n" if ($self->{verbose});
+  print $out "$command\n";
+  # read the response
+  my $results = readUntilPrompt($self);
+  return unless defined wantarray;
+  return wantarray ? split( /\n/, $results ) : $results;
+}
+
+################################################################
+# run
+#   Run the given command.
+#   If it fails and the optional $die_on_error param is true,
+#   die with a useful error message.
+#   If the optional $ref_out param is set, stick the ttIsql output
+#   in the referenced location.
+#   If enable_plsql_statements, then it will avoid stripping newlines in the
+#    input command.
+#   Return true unless the command failed.
+sub run($$;$$)
+{
+  my ($self, $command, $die_on_error, $ref_out, $enable_plsql_statements) = @_;
+  my @cmdlist;
+  my $out = '';
+  my $fail = 0;
+  $self->{ errstr } = '';
+
+  if ($self->{closed}) {
+    carp "Attempt to write on closed object";
+    return undef;
+  }
+  local $SIG{PIPE} = sub { mark_invalid($self) };
+
+  # Get rid of newlines, which confuse the code that
+  # tries to find the prompt at the end of the command.
+  if ($enable_plsql_statements)
+  {
+    # For PL/SQL, which needs the newlines, split into many commands
+    # so each line can read its response.
+    @cmdlist = split (/\r?\n/, $command);
+  }
+  else
+  {
+    $command =~ s/\r?\n/ /g;
+    push(@cmdlist,$command);
+  }
+  foreach $command (@cmdlist)
+  {
+    $command =~ s/\s+$//g;  # ttIsql doesn't like '; ;' right now, bug 9369
+    $out.= $self->write($command);
+    my $localfail = (index($out, 'The command failed') != -1) ||
+               (index($out, 'Assertion failed') != -1);
+    if ($localfail and $die_on_error) {
+      $self->close();
+      die "FAIL\nttIsql command\n  $command\nfailed:\n$out\n";
+    }
+    $fail = $localfail if ($localfail);
+    if ( $fail ){
+      $self->{ errstr } = $out;
+      $self->{ errstr } =~ s/\nThe command failed.\n//;
+    }
+  }
+  if (defined($ref_out)) {
+    $$ref_out = $out;
+  }
+  return ! $fail;
+} # run
+
+################################################################
+# run_select
+#   Run the given command as per run.
+#   Turns on column labels and loads result set into an array of
+#   hashes, i.e., $row[ $i ]->{ columnlabel } = value.
+#   Returns success/failure.
+sub run_select( $$$$ ){
+  my ( $self, $command, $die_on_error, $result_ref ) = @_;
+  @$result_ref = ();
+
+  if ( $self->{ closed } ){
+    carp "Attempt to write on closed object";
+    return undef;
+  }
+  my $result;
+  my $isSelect = ( $command =~ /^select|^call|^xlaread|^sqlcolumns|^sqltables|^cmdcache/i );
+  my $columnlabels = 1;
+  # Turn columnlabels on, if necessary
+  if ( $isSelect and $self->{ columnlabels } ){
+    $self->run( 'columnlabels', 0, \$result );
+    if ( $result =~ /OFF/ ){
+      $columnlabels = 0;
+      $self->write( 'columnlabels 1' );
+    }
+    # If the command fails, columnlabels aren't available in ttIsql
+    if ( $result =~ /failed/ ){
+      $self->{ columnlabels } = 0;
+    }
+  }
+  my $rv = $self->run( $command, $die_on_error, \$result );
+  if ( $isSelect and $rv ){
+    my @rows = split '\n', $result;
+    shift @rows if (!$rows[0]); # skip blank line
+    # if column lables are available in this ttIsql, use them,
+    # otherwise, key each column by position number
+    if ( $rows[0] ){
+      my $firstrow = 0;
+      my @keys = split ', ', $rows[0];
+      if ( $self->{ columnlabels } ){
+	$firstrow = 1;
+      }else{
+	@keys = ( 1..@keys );
+      }
+      for ( my $i = $firstrow; $i < $#rows; ++$i ){
+	my $row = {};
+	$rows[ $i ] =~ s/(^\< )|( \>$)//g;
+	my @values = split ', ', $rows[ $i ];
+	for ( my $j = 0; $j <= $#keys; ++$j ){
+	  $row->{ $keys[ $j ] } = $values[ $j ];
+	}
+	push @$result_ref, $row;
+      }
+    }
+  }
+  # Error handling?
+  if ( $isSelect and not $columnlabels ){
+    $self->write( 'columnlabels 0' );
+  }
+  return $rv;
+}
+
+################################################################
+# Close connection to the program.
+sub close($)
+{
+  my $self = shift;
+  my $out = $self->{out};
+  return if $self->{closed};
+  if (defined($out)) {
+    if ($self->{isWin}) {
+      # have to explicitly send a quit
+      print $out ";\nquit\n";
+    }
+    close($out);
+  }
+  $self->{closed} = 1;
+  if ($self->{verbose}) {
+    print STDERR $self->{verbosePrefixOut}, "{close}\n";
+    if (! $self->{isWin}) {  # Windows hangs if you do this
+      readUntilPrompt($self);
+    }
+  }
+  close($self->{in});
+  if ($self->{isWin}) {
+    # avoid Can't spawn-NOWAIT: Resource temporarily unavailable
+    waitpid($self->{waitpid}, 0);
+  } else {
+    my $want_pid = $self->{waitpid};
+    for (my $niters = 0; $niters < 150; ++$niters) {
+      my $n = waitpid($want_pid, WNOHANG);
+      last if ($n == -1 or $n == $want_pid);
+      select(undef, undef, undef, 0.1);
+    }
+  }
+  # save the exit status
+  $self->{exitstatus} = $?>>8;
+}
+
+
+################################################################
+# Set verboseness.
+sub verbose($$)
+{
+  my ($self, $val) = @_;
+  $self->{verbose} = $val;
+}
+
+
+################################################################
+# Set prefixes used when outputing verbose messages.
+sub verbosePrefix($$$)
+{
+  my ($self, $pfxIn, $pfxOut) = @_;
+  $self->{verbosePrefixIn} = $pfxIn;
+  $self->{verbosePrefixOut} = $pfxOut;
+}
+
+################################################################
+# Return most recent error string.
+sub errstr( $ ){
+  my ( $self ) = @_;
+  return $self->{ errstr };
+}
+
+################################################################
+# Return true is the statement is a PLSQL block.
+sub isPLSQLstatement( $$ ){
+  my ( $self, $command ) = @_;
+  $command =~ s!\s*!!;  # remove leading white space
+  $command =~ s!/\*.*?\*/!!g;  # remove C-style comments (minimal match)
+  $command =~ s!--.*?\n!!sg;   # remove -- comments  (minimal match)
+  if ($self->{verbose}) {
+    print STDERR "testing $command\n";
+  }
+  if ($command =~ /^(begin|<<|declare)/i or $command =~ /^create\s+(or\s+replace\s+)?(procedure|package|function|trigger)/i)
+  {
+    if ($self->{verbose}) {
+      print STDERR "yes\n";
+    }
+    return 1;
+  }
+  else
+  {
+    if ($self->{verbose}) {
+      print STDERR "no\n";
+    }
+    return 0;
+  }
+}
+
+################################################################
+# Add a string to the custom prompts.
+sub addCustomPrompt( $$ ){
+  my ( $self, $pr ) = @_;
+  push (@{$self->{customPrompt}}, $pr);
+}
+
+################################################################
+# Replace the entire set of custom prompts.
+sub replaceCustomPrompts( $$ ){
+  my ( $self) = shift;
+  # this makes a copy.  Don't want a reference to \@_
+  @{$self->{customPrompt}} = [ @_ ];
+}
+
+################################################################
+# Object destructor: close the pipes.
+sub DESTROY
+{
+  my $self = shift;
+  $self->{verbose} = 0;
+  $self->close()
+}
+
+1;  # end of TTIsql package
+

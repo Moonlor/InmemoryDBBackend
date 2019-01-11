@@ -1,0 +1,416 @@
+#! perl -w
+# Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+#
+
+use FindBin qw($Script $Bin);
+my $Usage = <<EOF;
+Usage: $Script [options]
+
+Sets up TimesTen environment variables.
+
+Usage if using zsh/bash/sh/ksh:
+  eval `$Script`
+
+Usage if using tcsh/csh:
+  eval `$Script -csh`
+
+Usage if using from a perl script:
+  eval `$Script -perl`
+
+Other options you can use:
+-demo     Sets up environment for running the TimesTen demos
+-dir      Specifies the location of the <installation_dir>/bin directory
+-jdkver   Specifies the version of java to use when setting CLASSPATH
+EOF
+
+use strict;
+use Getopt::Long;
+
+use constant FMT_SH   => 0;
+use constant FMT_CSH  => 1;
+use constant FMT_PERL => 2;
+use constant FMT_WIN  => 3;
+
+my $fmt = FMT_SH;      # output format
+my $demo_paths;        # whether to output extra info for demos
+my $bindir;            # install_dir/bin directory
+my $jdkver;            # what version of java ("15","16",...)
+my @export_log;
+my %java_versions = ( '15' => '5', '16' => '6', '17' => '6' );
+my $jdkverstr;
+
+GetOptions('h|help'     =>  sub { print STDERR $Usage; exit(0) },
+           'sh'         =>  sub { $fmt = FMT_SH },
+           'csh'        =>  sub { $fmt = FMT_CSH },
+           'perl'       =>  sub { $fmt = FMT_PERL },
+           'win|bat'    =>  sub { $fmt = FMT_WIN },
+           'demo'       =>  \$demo_paths,
+           'dir=s'      =>  \$bindir,
+           'jdkver=s'   =>  \$jdkver,
+          ) or die $Usage;
+
+if (! defined($bindir)) {
+  $bindir = $Bin;
+}
+if ($^O eq 'MSWin32') {
+  # unmangle the windows path
+  $bindir =~ s/"//g;
+  $bindir =~ s{\\}{/}g;
+  $bindir =~ s{/$}{}g;
+  $bindir =~ s{\s+$}{}g;
+}
+# top-level install directory
+(my $ttdir = $bindir) =~ s{[/\\]bin$}{};
+
+# if no jdk specified, find java version
+$jdkver = find_jdk_version() if (!defined($jdkver));
+
+# default the JDK version
+if (defined $jdkver and defined($java_versions{$jdkver})) {
+    $jdkverstr = $java_versions{$jdkver};
+} else {
+    warn "NOTE: unknown or unsupported java version, setting values for JDK 1.5\n";
+    $jdkver = '15';  # no java in path
+}
+
+$jdkverstr = '5' unless defined $jdkverstr;
+my $ttjarfile="ttjdbc".$jdkverstr.".jar";
+
+# Hash of os_bits to list of path vars we set.
+my %pathvars =
+  (
+   Solaris_32   =>  [ 'LD_LIBRARY_PATH' ],
+   Solaris_64   =>  [ 'LD_LIBRARY_PATH', 'LD_LIBRARY_PATH_64' ],
+   'HPUX/PA_32' =>  [ 'LD_LIBRARY_PATH', 'SHLIB_PATH' ],
+   'HPUX/PA_64' =>  [ 'LD_LIBRARY_PATH', 'SHLIB_PATH' ],
+   Aix          =>  [ 'LIBPATH' ],
+   'MacOSX/x86' =>  ['DYLD_LIBRARY_PATH' ],
+   'MacOSX/x86_64' =>  ['DYLD_LIBRARY_PATH' ],
+   # anything not on here uses just 'LD_LIBRARY_PATH'
+  );
+
+# get installation setup by running ttVersion
+my %conf;
+get_config();
+
+# path separator character
+my $sepchar = ($conf{os} eq 'NT') ? ';' : ':';
+
+my $instant_client_dirname = 'instantclient_11_2';
+
+# libpath (LD_LIBRARY_PATH, ...).
+set_libpath("$ttdir/lib","$ttdir/ttoracle_home/$instant_client_dirname");
+
+# Things to add to the PATH
+my $user_has_ant = find_ant();
+my @add_binpath =
+  ( "$ttdir/bin",
+    "$ttdir/quickstart/sample_code/oci",
+    "$ttdir/quickstart/sample_code/odbc",
+    "$ttdir/quickstart/sample_code/odbc/xla",
+    "$ttdir/quickstart/sample_code/jdbc",
+    "$ttdir/quickstart/sample_code/odbc_drivermgr",
+    "$ttdir/quickstart/sample_code/proc",
+    "$ttdir/quickstart/sample_code/ttclasses",
+    "$ttdir/quickstart/sample_code/ttclasses/xla",
+    "$ttdir/ttoracle_home/$instant_client_dirname",
+    "$ttdir/ttoracle_home/$instant_client_dirname/sdk",
+  );
+if (! $user_has_ant) {
+  # add ant dir if not in path and $demo_paths set
+  my $ant_home = "$ttdir/3rdparty/ant";
+  push(@add_binpath, "$ant_home/bin");
+  # also set ANT_HOME
+  export_value('ANT_HOME', $ant_home);
+}
+if ($conf{os} eq 'NT') {
+  push(@add_binpath, "$ttdir/lib");
+}
+
+if (my $crs_path = get_crs_path()) {
+  push(@add_binpath, $crs_path);
+}
+
+set_binpath(@add_binpath);
+
+
+# Things to add to the CLASSPATH
+my @add_classpath =
+  (  "$ttdir/lib/$ttjarfile",               # JDBC
+     "$ttdir/lib/orai18n.jar",
+     "$ttdir/lib/timestenjmsxla.jar",       # JMS/XLA
+     "$ttdir/3rdparty/jms1.1/lib/jms.jar",  # Sun JMS
+  );
+if ($demo_paths) {
+  push(@add_classpath, "$ttdir/quickstart",
+                       "$ttdir/quickstart/sample_code/jdbc");
+}
+push(@add_classpath, ".");
+set_classpath(@add_classpath);
+
+set_tns_admin();
+show_exports();
+
+
+exit 0;
+
+
+################################################################
+
+# parse daemon options file for -tns_admin
+sub set_tns_admin
+{
+  local *F;
+  local $_;
+
+  my $doptions;
+  if ($^O eq 'MSWin32') {
+    $doptions = "$ttdir/srv/info/ttendaemon.options";
+  } else {
+    $doptions = "$ttdir/info/ttendaemon.options";
+  }
+  my $tns_admin;
+  if (open(F, $doptions)) {
+    while (<F>) {
+      if (/^-tns_admin (.+)/) {
+        $tns_admin = "$1";
+        last;
+      }
+    }
+    close(F);
+  }
+
+  if (defined $ENV{TNS_ADMIN}) {
+    echo_msg("NOTE: TNS_ADMIN is already set in environment - $ENV{TNS_ADMIN}");
+  } else {
+    if ($demo_paths) {
+      export_value('TNS_ADMIN', "$ttdir/network/admin/samples");
+    } elsif (defined($tns_admin)) {
+      export_value('TNS_ADMIN', $tns_admin);
+    }
+  }
+
+}
+
+## parse ttcrsagent options file for -crsHome
+sub get_crs_path
+{
+  local *F;
+  local $_;
+
+  my $crs_options;
+  if ($conf{os} eq 'NT') {
+    $crs_options = "$ttdir/srv/info/ttcrsagent.options";
+  } else {
+    $crs_options = "$ttdir/info/ttcrsagent.options";
+  }
+  open(F, $crs_options)
+    or return undef;
+  my $crsbin;
+  while (<F>) {
+    if (/^-crsHome (.+)/) {
+      $crsbin = "$1" . '/bin';
+      last;
+    }
+  }
+  close(F);
+
+  if (defined $crsbin) {
+    if ($conf{os} eq 'NT') {
+      # mangle the slashes on Windows
+      $crsbin =~ s{/}{\\}g;
+    }
+    return $crsbin;
+  }
+
+  return undef;
+
+}
+
+# run ttVersion to get the configuration
+sub get_config
+{
+  local *F;
+  local $_;
+  my $ttversion = "$bindir/ttVersion";
+  # on windows, append a .exe
+  if (-f "$ttversion.exe") {
+    $ttversion = "$ttversion.exe";
+  }
+
+  open(F, qq{"$ttversion" -m |})
+    or die "$Script: can't run $ttversion: $!\n";
+  while (<F>) {
+    chomp;
+    if (/^(\w+)=(.*)/) {
+      $conf{$1} = $2;
+    }
+  }
+  close(F);
+  # check for needed elements
+  my @missing = grep !defined($conf{$_}), qw/ bits os /;
+  if (@missing) {
+    die "$Script: missing items in $ttversion output (@missing)\n";
+  }
+} # get_config
+
+
+# split a path variable into a list
+sub split_pathvar
+{
+  my $var = shift;
+  return () unless defined($ENV{$var});
+  split(/$sepchar/, $ENV{$var});
+} # split_pathvar
+
+
+sub echo_msg
+{
+  if (($fmt == FMT_CSH) || ($fmt == FMT_SH)) {
+    print qq{echo "@_"\n;};
+  } elsif ($fmt == FMT_WIN) {
+    print qq{echo @_\n};
+  }
+  # Don't do it for FMT_PERL.
+} # echo_msg
+
+
+# Print command to export a value, in correct shell syntax
+sub export_value
+{
+  my ($var, $val) = @_;
+  push(@export_log, "$var set to $val");
+  if ($fmt == FMT_CSH) {
+    print qq<setenv $var "$val";\n>;
+  } elsif ($fmt == FMT_PERL) {
+    print qq<\$ENV{$var} = '$val';\n>;
+  } elsif ($fmt == FMT_WIN) {
+    print qq<set $var=$val\n>;
+  } else {
+    print qq<$var="$val"; export $var;\n>;
+  }
+} # export_value
+
+sub show_exports
+{
+  if (($fmt == FMT_CSH) || ($fmt == FMT_SH)) {
+    print qq{echo "";\n};
+    foreach my $s (@export_log) {
+      print qq{echo "$s";\necho "";\n};
+    }
+  } elsif ($fmt == FMT_PERL) {
+    # don't bother
+  } elsif ($fmt == FMT_WIN) {
+    # don't bother
+  }
+}
+
+# Set a path-like variable.
+# Prepend or append new values.
+# Get rid of any duplicates.
+sub set_pathvar
+{
+  my ($var, $prepend, @newvals) = @_;
+
+  # get list of variables
+  my @vals = split_pathvar($var);
+  if ($prepend) {
+    unshift(@vals, @newvals);
+  } else {
+    push(@vals, @newvals);
+  }
+
+  # make sure there are no repetitions
+  my %seen;
+  @vals = grep { my $new = !exists($seen{$_}); $seen{$_} = 1; $new } @vals;
+
+  # output new value
+  my $val = join($sepchar, @vals);
+  export_value($var, $val);
+  if ($fmt == FMT_WIN) {
+    print qq<echo.\n>;
+    print qq<echo set $var to "$val"\n>;
+  }
+} # set_pathvar
+
+
+# set the LD_LIBRARY_PATH or equivalent
+sub set_libpath
+{
+  return if ($conf{os} eq 'NT');
+  my @add = @_;  # things to add
+  my @vars;
+  my $pathvar;
+  if ($conf{os} =~ /sol|hpux/i) {
+    $pathvar = $conf{os}.'_'.$conf{bits};
+  } else {
+    $pathvar = $conf{os};
+  }
+  if (defined($pathvars{$pathvar})) {
+    @vars = @{$pathvars{$pathvar}};
+  } else {
+    @vars = ( 'LD_LIBRARY_PATH' );
+  }
+  foreach my $var (@vars) {
+    set_pathvar($var, 1, @add);
+  }
+} # set_libpath
+
+
+# set the PATH
+sub set_binpath
+{
+  my @newpath = @_;
+  if ($conf{os} eq 'NT') {
+    foreach (@newpath) {
+      # mangle the slashes on Windows
+      s{/}{\\}g;
+    }
+  }
+  set_pathvar('PATH', 1, @newpath);
+} # set_binpath
+
+# set the CLASSPATH
+sub set_classpath
+{
+  my @newpath = @_;
+  if ($conf{os} eq 'NT') {
+    foreach (@newpath) {
+      # mangle the slashes on Windows
+      s{/}{\\}g;
+    }
+  }
+  set_pathvar('CLASSPATH', 1, @newpath);
+} # set_classpath
+
+# return true value if ant is found on the path
+sub find_ant
+{
+  my @dirs = split_pathvar('PATH');
+  foreach my $dir (@dirs) {
+    if (-x "$dir/ant") {
+      return 1;
+    }
+  }
+  return undef;
+} # find_ant
+
+
+# try to find java version by running "java -version"
+# with whatever java is on the path
+sub find_jdk_version
+{
+  local *F;
+  local $_;
+  open(F, "java -version 2>&1 |")
+    or return undef;
+  my $vers;
+  while (<F>) {
+    if (/java version "(\d+)\.(\d+)/) {
+      $vers = "$1$2";
+      last;
+    }
+  }
+  close(F);
+  $vers;
+} # find_jdk_version

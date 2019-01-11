@@ -31,7 +31,7 @@ spring:
 #      primary: master #设置默认的数据源或者数据源组,默认值即为master
 #      datasource:
 #        master:
-#          url: jdbc:oracle:thin:@192.168.1.15:1521:orcl
+#          url: jdbc:oracle:thin:@192.168.1.15:1521:xe
 #          username: memory
 #          password: memory
 #          driver-class-name: oracle.jdbc.driver.OracleDriver
@@ -39,7 +39,7 @@ spring:
 #            max-lifetime: 1765000
 #            maximum-pool-size: 15
 #        tt:
-#          url: jdbc:timesten:direct:dsn=memory_tt;uid=memory;pwd=memory
+#          url: jdbc:timesten:client:dsn=tt1122;uid=memory;pwd=memory
 #          username: memory
 #          password: memory
 #          driver-class-name: com.timesten.jdbc.TimesTenDriver
@@ -63,4 +63,4 @@ server:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
     min-response-size: 1024
-  port: 5005
+  port: 8484

@@ -11,4 +11,8 @@ import lombok.Data;
 @Data
 public class GetOrderDTO{
 
+    private Integer page;
+
+    private Integer pageSize;
+
 }
