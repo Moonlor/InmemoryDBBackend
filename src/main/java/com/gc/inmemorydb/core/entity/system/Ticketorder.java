@@ -9,7 +9,6 @@ import java.io.Serializable;
 public class Ticketorder implements Serializable {
 
 
-    @TableId
     private Integer orderId;
 
     private Integer userId;
