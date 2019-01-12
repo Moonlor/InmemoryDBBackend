@@ -18,4 +18,4 @@ hs_err_pid*
 ./src/main/resources/application.yml
 *.imi
 
-!dependency/
+!./dependency/

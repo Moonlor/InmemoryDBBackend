@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gc.inmemorydb.core.mapper.system.ReportMapper">
+    <select id="generateCertainAirlineReport" resultType="com.gc.inmemorydb.core.dto.system.report.CertainAirlineReportDTO">
+        {CALL CERTAIN_AIRLINE_REPORT.generate_report(#{year}, #{airline})}
+    </select>
+
+    <select id="getCertainAirlineReport" resultType="com.gc.inmemorydb.core.dto.system.report.CertainAirlineReportDTO">
+        SELECT * FROM AIRLINE_CITY_REPORT
+    </select>
+
+    <select id="generateAirlineYearReport" resultType="com.gc.inmemorydb.core.dto.system.report.AirlineYearReportDTO">
+        {CALL AIRLINE_YEAR_REPORT.generate_report(#{year})}
+    </select>
+
+    <select id="getAirlineYearReport" resultType="com.gc.inmemorydb.core.dto.system.report.AirlineYearReportDTO">
+        SELECT * FROM ALL_AIRLINE_YEAR_REPORT
+    </select>
+
+    <select id="generateCityReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityPairReportDTO">
+        {CALL CITY_REPORT.generate_report(#{year})}
+    </select>
+
+    <select id="getCityPairReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityPairReportDTO">
+        SELECT * FROM CITY_PAIR
+    </select>
+
+    <select id="getCityArriveReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityArriveReportDTO">
+        SELECT * FROM CITY_ARRIVE
+    </select>
+
+    <select id="getCityDeptReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityDeptReportDTO">
+        SELECT * FROM CITY_DEPT
+    </select>
+
+    <select id="generateUserYearReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserReportDTO">
+        {CALL USER_YEAR_REPORT.generate_report(#{userId}, #{year})}
+    </select>
+
+    <select id="getUserReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserReportDTO">
+        SELECT * FROM USER_REPORT
+    </select>
+
+    <select id="getUserTripReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserTripDTO">
+        SELECT * FROM USER_TRIP
+    </select>
+
+    <select id="getUserAirlineOrderReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserAirlineOrderDTO">
+        SELECT * FROM USER_AIRLINE_ORDER
+    </select>
+
+</mapper>
