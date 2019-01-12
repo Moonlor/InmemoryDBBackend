@@ -14,5 +14,5 @@ public class UserAirlineOrderDTO extends SplitPageDTO {
 
     private Integer orderNum;
 
-    private Integer orderMemory;
+    private Integer orderMoney;
 }
