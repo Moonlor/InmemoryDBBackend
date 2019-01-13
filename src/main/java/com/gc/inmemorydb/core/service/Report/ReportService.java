@@ -15,4 +15,6 @@ public interface ReportService {
     Map<String, Object> cityReport(GetCityReportDTO getCityReportDTO, String sqlUid);
 
     Map<String, Object> userYearReport(GetUserYearReportDTO getUserYearReportDTO, String sqlUid);
+
+    String graph(GetGraphDTO getGraphDTO);
 }

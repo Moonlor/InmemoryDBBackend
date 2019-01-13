@@ -49,4 +49,15 @@
         SELECT * FROM USER_AIRLINE_ORDER
     </select>
 
+    <select id="getGraph" resultType="com.gc.inmemorydb.core.dto.system.report.GraphDTO">
+        SELECT DISTINCT GRAPH FROM
+        (SELECT
+        (DEPT_AIRPORT_CODE || '-' || ARRIVE_AIRPORT_CODE) AS GRAPH
+        FROM FLIGHT
+        WHERE
+        DEPT_DATE > to_date(#{startDate},'yyyy-mm-dd hh24:mi:ss')
+        AND
+        DEPT_DATE &lt; to_date(#{endDate},'yyyy-mm-dd hh24:mi:ss'))
+    </select>
+
 </mapper>

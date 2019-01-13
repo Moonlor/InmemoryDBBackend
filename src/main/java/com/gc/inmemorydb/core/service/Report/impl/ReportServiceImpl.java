@@ -71,4 +71,18 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Flight> impleme
 
         return r;
     }
+
+    @Override
+    public String graph(GetGraphDTO getGraphDTO){
+        List<GraphDTO> r = this.baseMapper.getGraph(getGraphDTO.getStartDate(), getGraphDTO.getEndDate());
+        StringBuilder sb = new StringBuilder();
+        sb.append(r.get(0).getGraph());
+        r.remove(0);
+        for (GraphDTO g: r) {
+            sb.append(",");
+            sb.append(g.getGraph());
+        }
+
+        return sb.toString().replaceAll("BJS", "PEK");
+    }
 }

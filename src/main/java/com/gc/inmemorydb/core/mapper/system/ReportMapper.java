@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.plugins.pagination.Pagination;
 import com.gc.inmemorydb.core.dto.system.report.*;
 import com.gc.inmemorydb.core.entity.system.Flight;
 import com.gc.inmemorydb.core.entity.system.Report;
+import com.sun.corba.se.impl.orbutil.graph.Graph;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -37,4 +38,7 @@ public interface ReportMapper extends BaseMapper<Flight> {
     List<UserReportDTO> getUserReport();
     List<UserTripDTO> getUserTripReport();
     List<UserAirlineOrderDTO> getUserAirlineOrderReport();
+
+    List<GraphDTO> getGraph(@Param("startDate") String startDate,
+                         @Param("endDate") String endDate);
 }
