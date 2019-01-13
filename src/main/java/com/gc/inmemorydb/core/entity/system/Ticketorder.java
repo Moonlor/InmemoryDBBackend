@@ -11,7 +11,7 @@ public class Ticketorder implements Serializable {
 
     private Integer orderId;
 
-    private Integer userId;
+    private String userId;
 
     private Integer flightId;
 

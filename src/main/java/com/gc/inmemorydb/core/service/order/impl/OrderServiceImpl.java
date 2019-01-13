@@ -41,7 +41,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper,Ticketorder> imple
         JwtToken jwtToken = getJWTToken();
 
         Ticketorder temp = new Ticketorder();
-        temp.setUserId(Integer.parseInt(jwtToken.getUid()));
+        temp.setUserId(jwtToken.getUid());
         temp.setFlightId(orderAddDTO.getFlightId());
 
         this.insert(temp);
