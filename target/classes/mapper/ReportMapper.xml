@@ -6,7 +6,7 @@
     </select>
 
     <select id="getCertainAirlineReport" resultType="com.gc.inmemorydb.core.dto.system.report.CertainAirlineReportDTO">
-        SELECT * FROM AIRLINE_CITY_REPORT
+        SELECT * FROM AIRLINE_CITY_REPORT WHERE YEAR = #{year} AND AIRLINE = #{airline}
     </select>
 
     <select id="generateAirlineYearReport" resultType="com.gc.inmemorydb.core.dto.system.report.AirlineYearReportDTO">
@@ -14,7 +14,7 @@
     </select>
 
     <select id="getAirlineYearReport" resultType="com.gc.inmemorydb.core.dto.system.report.AirlineYearReportDTO">
-        SELECT * FROM ALL_AIRLINE_YEAR_REPORT
+        SELECT * FROM ALL_AIRLINE_YEAR_REPORT WHERE YEAR = #{year}
     </select>
 
     <select id="generateCityReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityPairReportDTO">
@@ -22,15 +22,15 @@
     </select>
 
     <select id="getCityPairReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityPairReportDTO">
-        SELECT * FROM CITY_PAIR
+        SELECT * FROM CITY_PAIR WHERE YEAR = #{year}
     </select>
 
     <select id="getCityArriveReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityArriveReportDTO">
-        SELECT * FROM CITY_ARRIVE
+        SELECT * FROM CITY_ARRIVE WHERE YEAR = #{year}
     </select>
 
     <select id="getCityDeptReport" resultType="com.gc.inmemorydb.core.dto.system.report.CityDeptReportDTO">
-        SELECT * FROM CITY_DEPT
+        SELECT * FROM CITY_DEPT WHERE YEAR = #{year}
     </select>
 
     <select id="generateUserYearReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserReportDTO">
@@ -38,15 +38,15 @@
     </select>
 
     <select id="getUserReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserReportDTO">
-        SELECT * FROM USER_REPORT
+        SELECT * FROM USER_REPORT WHERE YEAR = #{year} AND USER_ID = #{userId}
     </select>
 
     <select id="getUserTripReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserTripDTO">
-        SELECT * FROM USER_TRIP
+        SELECT * FROM USER_TRIP WHERE YEAR = #{year} AND USER_ID = #{userId}
     </select>
 
     <select id="getUserAirlineOrderReport" resultType="com.gc.inmemorydb.core.dto.system.report.UserAirlineOrderDTO">
-        SELECT * FROM USER_AIRLINE_ORDER
+        SELECT * FROM USER_AIRLINE_ORDER WHERE YEAR = #{year} AND USER_ID = #{userId}
     </select>
 
     <select id="getGraph" resultType="com.gc.inmemorydb.core.dto.system.report.GraphDTO">

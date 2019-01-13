@@ -20,24 +20,28 @@ public interface ReportMapper extends BaseMapper<Flight> {
     List<CertainAirlineReportDTO> generateCertainAirlineReport(@Param("year") Integer year,
                                                                @Param("airline") String airline,
                                                                @Param("sqlUid") String sqlUid);
-    List<CertainAirlineReportDTO> getCertainAirlineReport();
+    List<CertainAirlineReportDTO> getCertainAirlineReport(@Param("year") Integer year,
+                                                          @Param("airline") String airline);
 
     List<AirlineYearReportDTO> generateAirlineYearReport(@Param("year") Integer year,
                                                          @Param("sqlUid") String sqlUid);
-    List<AirlineYearReportDTO> getAirlineYearReport();
+    List<AirlineYearReportDTO> getAirlineYearReport(@Param("year") Integer year);
 
     List<AirlineYearReportDTO> generateCityReport(@Param("year") Integer year,
                                                   @Param("sqlUid") String sqlUid);
-    List<CityPairReportDTO> getCityPairReport();
-    List<CityArriveReportDTO> getCityArriveReport();
-    List<CityDeptReportDTO> getCityDeptReport();
+    List<CityPairReportDTO> getCityPairReport(@Param("year") Integer year);
+    List<CityArriveReportDTO> getCityArriveReport(@Param("year") Integer year);
+    List<CityDeptReportDTO> getCityDeptReport(@Param("year") Integer year);
 
     List<UserReportDTO> generateUserYearReport(@Param("year") Integer year,
                                                @Param("userId") String userId,
                                                @Param("sqlUid") String sqlUid);
-    List<UserReportDTO> getUserReport();
-    List<UserTripDTO> getUserTripReport();
-    List<UserAirlineOrderDTO> getUserAirlineOrderReport();
+    List<UserReportDTO> getUserReport(@Param("year") Integer year,
+                                      @Param("userId") String userId);
+    List<UserTripDTO> getUserTripReport(@Param("year") Integer year,
+                                        @Param("userId") String userId);
+    List<UserAirlineOrderDTO> getUserAirlineOrderReport(@Param("year") Integer year,
+                                                        @Param("userId") String userId);
 
     List<GraphDTO> getGraph(@Param("startDate") String startDate,
                          @Param("endDate") String endDate);

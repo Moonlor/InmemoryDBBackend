@@ -38,14 +38,15 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Flight> impleme
                 getCertainAirlineReportDTO.getAirline(),
                 sqlUid);
 
-        return this.baseMapper.getCertainAirlineReport();
+        return this.baseMapper.getCertainAirlineReport(getCertainAirlineReportDTO.getYear(),
+                getCertainAirlineReportDTO.getAirline());
     }
 
     @Override
     public List<AirlineYearReportDTO> airlineYearReport(GetAirlineYearReportDTO getAirlineYearReportDTO, String sqlUid){
         this.baseMapper.generateAirlineYearReport(getAirlineYearReportDTO.getYear(), sqlUid);
 
-        return this.baseMapper.getAirlineYearReport();
+        return this.baseMapper.getAirlineYearReport(getAirlineYearReportDTO.getYear());
     }
 
     @Override
@@ -53,9 +54,9 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Flight> impleme
         this.baseMapper.generateCityReport(getCityReportDTO.getYear(), sqlUid);
 
         Map<String, Object> r = new HashMap<>();
-        r.put("pair", this.baseMapper.getCityPairReport());
-        r.put("arrive", this.baseMapper.getCityArriveReport());
-        r.put("dept", this.baseMapper.getCityDeptReport());
+        r.put("pair", this.baseMapper.getCityPairReport(getCityReportDTO.getYear()));
+        r.put("arrive", this.baseMapper.getCityArriveReport(getCityReportDTO.getYear()));
+        r.put("dept", this.baseMapper.getCityDeptReport(getCityReportDTO.getYear()));
         return r;
     }
 
@@ -65,9 +66,12 @@ public class ReportServiceImpl extends ServiceImpl<ReportMapper, Flight> impleme
                 getUserYearReportDTO.getUserId(),
                 sqlUid);
         Map<String, Object> r = new HashMap<>();
-        r.put("yearReport", this.baseMapper.getUserReport());
-        r.put("tripReport", this.baseMapper.getUserTripReport());
-        r.put("airlineOrderReport", this.baseMapper.getUserAirlineOrderReport());
+        r.put("yearReport", this.baseMapper.getUserReport(getUserYearReportDTO.getYear(),
+                getUserYearReportDTO.getUserId()));
+        r.put("tripReport", this.baseMapper.getUserTripReport(getUserYearReportDTO.getYear(),
+                getUserYearReportDTO.getUserId()));
+        r.put("airlineOrderReport", this.baseMapper.getUserAirlineOrderReport(getUserYearReportDTO.getYear(),
+                getUserYearReportDTO.getUserId()));
 
         return r;
     }
