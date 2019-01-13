@@ -10,7 +10,7 @@ spring:
       primary: master #设置默认的数据源或者数据源组,默认值即为master
       datasource:
         master:
-          url: jdbc:oracle:thin:@192.168.1.15:1522:xe
+          url: jdbc:oracle:thin:@192.168.1.15:1521:xe
           username: memory
           password: memory
           driver-class-name: oracle.jdbc.driver.OracleDriver
@@ -18,7 +18,7 @@ spring:
             max-lifetime: 1765000
             maximum-pool-size: 15
         tt:
-          url: jdbc:oracle:thin:@192.168.1.15:1522:xe
+          url: jdbc:oracle:thin:@192.168.1.15:1521:xe
           username: memory
           password: memory
           driver-class-name: oracle.jdbc.driver.OracleDriver

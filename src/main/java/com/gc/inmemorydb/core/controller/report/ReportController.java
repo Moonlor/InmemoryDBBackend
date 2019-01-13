@@ -70,4 +70,13 @@ public class ReportController {
         Map<String, Object> results = reportService.userYearReport(getUserYearReportDTO, sqlUid);
         return ResponseResult.e(ResponseCode.OK, results, StaticCache.getSqlCostUid(sqlUid));
     }
+
+    @PostMapping(value = {"/graph"})
+    @ApiOperation(value = "获得航线图元数据")
+    @SysLogs("获得航线图元数据")
+    @ApiImplicitParam(paramType = "header",name = "Authorization",value = "身份认证Token")
+    public ResponseResult graph(@RequestBody GetGraphDTO getGraphDTO) {
+        String result = reportService.graph(getGraphDTO);
+        return ResponseResult.e(ResponseCode.OK, result);
+    }
 }
