@@ -1,27 +1,7 @@
-# 介绍
-`watchdog-framework`基于SpringBoot+Shiro+Mybatis+Mybatis-Plus+HikariCP+Redis+Vue+iView等开发的轻量级管理系统快速开发脚手架，拥有角色、用户、资源管理、权限数据同步更新等功能，并此项目会进行持续更新升级，欢迎使用，若对您有帮助请点击上方的star :beers: 。
 
 - 用户名：test
 - 密码：test123456
 
-# 部分界面展示
-## 登录
-![登录](dist/login.png)
-## 用户管理
-![用户管理](dist/user.png)
-## 用户管理
-![用户管理](dist/user.png)
-## 用户添加
-![用户添加](dist/add-user.png) 
-## 角色管理
-![角色管理](dist/role.png) 
-## 角色添加
-![角色添加](dist/add-role.png) 
-## 资源管理
-![用户添加](dist/resource.png) 
-## 资源添加
-![资源管理](dist/add-resource.png)    
-## 更多请查看上方演示
 # 技术选型
 ## 后端技术
 技术 | 类型 | 版本 | 官网
